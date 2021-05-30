@@ -58,7 +58,7 @@ async function main() {
         //use this aspect ratio to keep proportions
         var aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
         var perspectiveMatrix = utils.MakePerspective(90, aspect_ratio, 0.1, 100.0);
-        var viewMatrix = utils.MakeView(0, 0, 4, 0, 0);
+        var viewMatrix = utils.MakeView(0, 0, 5, 0, 0);
 
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clearColor(0, 0, 0, 0);
@@ -66,6 +66,19 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.enable(gl.DEPTH_TEST);
 
+        var values = [1, 0, -1];
+        var dirs = [];
+
+        // Creating the coordinates of the cubes
+        for (var i = 0; i < values.length; i++) {
+            for (var j = 0; j < values.length; j++) {
+                for (var k = 0; k < values.length; k++) {
+                    dirs.push([i,j,k]);
+                }
+            }
+        }
+
+/*
         var dirs = [
             [-1, -1],
             [-1, 0],
@@ -77,12 +90,12 @@ async function main() {
             [1, 0],
             [1, 1]
         ];
-        
+*/      
         if (currRotationF != rotationF) {
             currRotationF += Math.sign(rotationF - currRotationF) * speed;
         }
 
-        for (var i = 0; i < 9; i++) {
+        for (var i = 0; i < 27; i++) {
             var dir = dirs[i];
             
             var projectionMatrix = [
@@ -94,7 +107,7 @@ async function main() {
                 utils.MakeTranslateMatrix(-tx, -ty, -tz),
 
                 // x, y, z, rX, rY, rZ, scale
-                utils.MakeWorld(dir[0] * 1.03 + tx, dir[1] * 1.03 + ty, tz, 0, 0, 0, 1),
+                utils.MakeWorld(dir[0] * 1.03 + tx, dir[1] * 1.03 + ty, dir[2] * 1.03 + tz, 0, 0, 0, 1),
 
                 viewMatrix,
             ].reduce(utils.multiplyMatrices);
