@@ -11,6 +11,16 @@ export async function loadTextFile(url) {
     return await file.text();
 }
 
+export function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255
+    ] : null;
+}
+
+
 //Utils ver. 0.4
 //Includes minimal mat3 support
 //Includes texture operations
@@ -500,9 +510,11 @@ export function MakeRotateZMatrix(a) {
 export function MakeRotateXYZMatrix(rx, ry, rz, s) {
     //Creates a world matrix for an object.
 
-    var Rx = this.MakeRotateXMatrix(ry);
-    var Ry = this.MakeRotateYMatrix(rx);
-    var Rz = this.MakeRotateZMatrix(rz);
+    var out = this.identityMatrix();
+
+    var Rx = this.MakeRotateXMatrix(-rx * s);
+    var Ry = this.MakeRotateYMatrix(ry * s);
+    var Rz = this.MakeRotateZMatrix(rz * s);
 
     out = this.multiplyMatrices(Ry, Rz);
     out = this.multiplyMatrices(Rx, out);
