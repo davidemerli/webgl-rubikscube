@@ -5,10 +5,56 @@
   <meta charset="utf8" />
   <title>Rubik's Cube</title>
   <link rel="stylesheet" href="src/css/style.css" />
+
+  <style>
+    .ui {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn {
+    background-color: white;
+    border: solid black 3px;
+    border-radius: 10px;
+    color: black;
+    padding: 15px 30px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 4px;
+    cursor: pointer;
+    transition: 0.6s;
+    }
+    
+    .btn:hover {
+      background-color: #111111;
+      color: white;
+    }
+    </style>
 </head>
 
 <body>
   <canvas id="c"></canvas>
+
+  <div class="ui">
+    <button class="btn" id= "F" type="button">F</button>
+    <button class="btn" id= "L"type="button">L</button>
+    <button class="btn" id= "B" type="button">B</button>
+    <button class="btn" id= "R" type="button">R</button>
+    <button class="btn" id= "U" type="button">U</button>
+    <button class="btn" id= "D" type="button">D</button>
+  </div>
+  <div class="ui">
+    <button class="btn" id= "F'" type="button">F'</button>
+    <button class="btn" id= "L'" type="button">L'</button>
+    <button class="btn" id= "B'" type="button">B'</button>
+    <button class="btn" id= "R'" type="button">R'</button>
+    <button class="btn" id= "U'" type="button">U'</button>
+    <button class="btn" id= "D'" type="button">D'</button>
+  </div>
+  
 </body>
 
 <script type="module" src="src/index.js"></script>

@@ -22,7 +22,7 @@ async function main() {
 
     let rubiksCube = new cubedef.RubiksCube(gl, program);
 
-    testRotations(rubiksCube);
+    //testRotations(rubiksCube);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
@@ -45,6 +45,7 @@ async function main() {
     }
 
     window.requestAnimationFrame(drawScene);
+    bindButtons(rubiksCube)
 }
 
 //TODO: remove test functions
@@ -58,6 +59,21 @@ async function testRotations(rubiksCube) {
 function choose(choices) {
     var index = Math.floor(Math.random() * choices.length);
     return choices[index];
+}
+
+function bindButtons(rubiksCube) {
+    const rotations = ["F", "L", "B", "R", "U", "D"];
+    rotations.forEach(id => {
+        document.getElementById(id).addEventListener("click", function() { 
+            rubiksCube.applyMove(id, 1);});
+        document.getElementById(id.concat("'")).addEventListener("click", function() { 
+            rubiksCube.applyMove(id, -1);});
+    });
+    document.addEventListener('keydown', logKey);
+    
+    function logKey(e) {
+        rubiksCube.applyMove(String.fromCharCode(e.code), 1);
+      }
 }
 
 window.onload = main;
