@@ -15,10 +15,12 @@
 
     .btn {
     background-color: white;
-    border: solid black 3px;
+    width: 70px;
+    background: none;
+    /*border: solid black 3px;
     border-radius: 10px;
     color: black;
-    padding: 15px 30px;
+    padding: 15px 30px;*/
     text-align: center;
     text-decoration: none;
     display: inline-block;
@@ -29,33 +31,34 @@
     }
     
     .btn:hover {
-      background-color: #111111;
       color: white;
-      -webkit-transform: scale(1.1);
-        -ms-transform: scale(1.1);
-        transform: scale(1.1);
+      -webkit-transform: scale(1.2);
+        -ms-transform: scale(1.2);
+        transform: scale(1.2);
+      -webkit-filter: drop-shadow(10px 10px 10px #222);
+      filter: drop-shadow(10px 10px 10px #222);
     }
     </style>
 </head>
 
 <body>
   <canvas id="c"></canvas>
-  <div id="legend" style="position: absolute; z-index: 1; left: 10%; top: 80%; width:80%; height:30%;background: rgba(225, 225, 225, 0); opacity: 0.9; padding: 5px 10px 5px 10px; overflow:auto">
+  <div id="legend" style="position: absolute; z-index: 1; left: 10%; top: 70%; width:80%; height:28%; background: rgba(225, 225, 225, 0); opacity: 0.9; padding: 5px 10px 5px 10px; overflow:auto">
   <div class="ui">
-    <button class="btn" id= "F" type="button">F&thinsp;</button>
-    <button class="btn" id= "L"type="button">L&thinsp;</button>
-    <button class="btn" id= "B" type="button">B&thinsp;</button>
-    <button class="btn" id= "R" type="button">R&thinsp;</button>
-    <button class="btn" id= "U" type="button">U&thinsp;</button>
-    <button class="btn" id= "D" type="button">D&thinsp;</button>
+    <img src ="img/F.png" class="btn" id= "F" type="button">
+    <img src ="img/L.png" class="btn" id= "L"type="button">
+    <img src ="img/B.png" class="btn" id= "B" type="button">
+    <img src ="img/R.png" class="btn" id= "R" type="button">
+    <img src ="img/U.png" class="btn" id= "U" type="button">
+    <img src ="img/D.png" class="btn" id= "D" type="button">
   </div>
   <div class="ui">
-    <button class="btn" id= "F'" type="button">F'</button>
-    <button class="btn" id= "L'" type="button">L'</button>
-    <button class="btn" id= "B'" type="button">B'</button>
-    <button class="btn" id= "R'" type="button">R'</button>
-    <button class="btn" id= "U'" type="button">U'</button>
-    <button class="btn" id= "D'" type="button">D'</button>
+    <img src ="img/Finv.png" class="btn" id= "F'" type="button">
+    <img src ="img/Linv.png" class="btn" id= "L'" type="button">
+    <img src ="img/Binv.png" class="btn" id= "B'" type="button">
+    <img src ="img/Rinv.png" class="btn" id= "R'" type="button">
+    <img src ="img/Uinv.png" class="btn" id= "U'" type="button">
+    <img src ="img/Dinv.png" class="btn" id= "D'" type="button">
   </div>
 </div>
 </body>
