@@ -1,5 +1,13 @@
 import * as utils from "./utils.js";
 
+
+
+let currentAngle = [0, 0]
+
+var lastUpdateTime;
+var g_time = 0;
+
+
 class Cubie {
 	constructor(gl, program, x, y, z) {
 		const spacing = 0.03;
@@ -77,8 +85,11 @@ export class RubiksCube {
 		this.gl = gl;
 		this.program = program;
 		this.cubies = this.#initCubies(gl, program);
+		this.currentAngle = [0, 0];
+		this.angle = new Quaternion();
 
 		this.rotating = false;
+
 	}
 
 	#initCubies(gl, program) {
@@ -155,6 +166,9 @@ export class RubiksCube {
 			});
 		}
 
+		g_time = 0
+		lastUpdateTime = 0
+
 		updateRotating(false);
 	}
 
@@ -164,24 +178,28 @@ export class RubiksCube {
 		const gl = this.gl;
 
 		const aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
-		const perspectiveMatrix = utils.MakePerspective(90, aspect_ratio, 0.1, 100.0);
+		const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
 		const viewMatrix = utils.MakeView(0, 0, 5, 0, 0);
 
 		//TODO: make rotation mouse controllable
 		const worldMatrix = utils.MakeWorld(
 			0, 0, 0, // x, y, z
-			// 0, 30, 0,
-			Math.sin(counter / 360) * 360, // example rotation 
-			Math.sin(counter / 360 + 2 / 3 * Math.PI) * 360,
-			Math.sin(counter / 360 + 4 / 3 * Math.PI) * 360,
+			0, 30, 0,
+			// Math.sin(counter / 360) * 360, // example rotation 
+			// Math.sin(counter / 360 + 2 / 3 * Math.PI) * 360,
+			// Math.sin(counter / 360 + 4 / 3 * Math.PI) * 360,
 			1 // scale
 		);
+
+
+
 
 		this.cubies.forEach(cubie => {
 			const projectionMatrix = [
 				perspectiveMatrix,
 				viewMatrix,
 				worldMatrix,
+				this.angle.toMatrix4(),
 				cubie.matrix,
 			].reduce(utils.multiplyMatrices);
 
@@ -190,6 +208,55 @@ export class RubiksCube {
 
 			gl.drawElements(gl.TRIANGLES, INDICES.length, gl.UNSIGNED_SHORT, 0);
 		});
+	}
+
+	//Add mouse interaction on canvas
+	initMouseControl(canvas, rubiksCube) {
+		var lastX = -1, lastY = -1;
+		var dragging = false;
+
+		canvas.onmousedown = function (event) {//Press the mouse to trigger the listening event
+			var x = event.clientX, y = event.clientY;
+
+			if (event.button == 0) {//Left mouse buttons
+				var rect1 = event.target.getBoundingClientRect();
+
+				if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
+					lastX = x;
+					lastY = y;
+					dragging = true;
+				}
+			}
+
+			//Release the mouse
+			canvas.onmouseup = function (event) {
+				if (event.button == 0) {
+					dragging = false;
+				}
+			};
+
+			//Move the mouse
+			canvas.onmousemove = function (event) {//Mouse movement monitoring
+				var x = event.clientX, y = event.clientY;
+
+				//Rotate
+				if (dragging) {
+					var factor1 = 200 / canvas.height;//spinning speed
+					var dx1 = factor1 * (x - lastX);
+					var dy1 = factor1 * (y - lastY);
+
+					//Limit the x-axis rotation range
+					rubiksCube.currentAngle[0] = rubiksCube.currentAngle[0] + dy1;
+					rubiksCube.currentAngle[1] = rubiksCube.currentAngle[1] + dx1;
+
+					rubiksCube.angle = Quaternion.fromEuler(0, utils.degToRad(dy1), utils.degToRad(dx1)).mul(rubiksCube.angle);
+				}
+
+				//Update the previous position as the starting position
+				lastX = x;
+				lastY = y;
+			}
+		}
 	}
 }
 

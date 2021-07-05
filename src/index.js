@@ -1,9 +1,11 @@
 import * as utils from "./utils.js";
 import * as cubedef from "./cubeDefinition.js";
 
+
+
 async function main() {
     var shaders = await utils.loadShaders(); // [vs, fs]
-    
+
     // Get a WebGL context
     var canvas = document.getElementById("c");
     var gl = canvas.getContext("webgl2");
@@ -21,18 +23,19 @@ async function main() {
     var program = utils.createProgram(gl, vertexShader, fragmentShader);
 
     let rubiksCube = new cubedef.RubiksCube(gl, program);
-
+    rubiksCube.initMouseControl(canvas, rubiksCube);
     //testRotations(rubiksCube);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
     function drawScene() {
+
         //use this aspect ratio to keep proportions
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // let c = cubedef.makeColorGradient(utils.degToRad(new Date().getMilliseconds() % 360) * 0.5);
-        let c = [1, 1, 1];
+        let c = [0.9, 0.9, 0.9];
 
         gl.clearColor(c[0], c[1], c[2], 1);
 
@@ -45,7 +48,7 @@ async function main() {
     }
 
     window.requestAnimationFrame(drawScene);
-    bindButtons(rubiksCube)
+    bindButtons(rubiksCube);
 }
 
 //TODO: remove test functions
@@ -68,25 +71,27 @@ function bindButtons(rubiksCube) {
     rotations.forEach(id => {
 
         //Logic of digital buttons
-        document.getElementById(id).addEventListener("click", function() { 
-            rubiksCube.applyMove(id, 1);});
-        document.getElementById(id.concat("'")).addEventListener("click", function() { 
-            rubiksCube.applyMove(id, -1);});
+        document.getElementById(id).addEventListener("click", function () {
+            rubiksCube.applyMove(id, 1);
+        });
+        document.getElementById(id.concat("'")).addEventListener("click", function () {
+            rubiksCube.applyMove(id, -1);
+        });
 
         //Logic of physical buttons
         document.addEventListener('keydown', (e) => {
             keysPressed[e.key.toUpperCase()] = true;
             //console.log(keysPressed);
             if (keysPressed[id]) {
-                if(keysPressed['SHIFT']) {
+                if (keysPressed['SHIFT']) {
                     rubiksCube.applyMove(id, -1);
                 }
-                else{
+                else {
                     rubiksCube.applyMove(id, 1);
                 };
             };
         });
-    
+
         document.addEventListener('keyup', (e) => {
             delete keysPressed[e.key.toUpperCase()];
             //console.log(keysPressed);
@@ -96,11 +101,11 @@ function bindButtons(rubiksCube) {
 
 
     document.addEventListener('keydown', bindKey);
-    
+
     function bindKey(e) {
         console.log(e);
         rubiksCube.applyMove(e.key, 1);
-      }
+    }
 }
 
 window.onload = main;
