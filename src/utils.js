@@ -226,6 +226,23 @@ export function degToRad(angle) {
     return (angle * Math.PI / 180);
 }
 
+
+export function dot(a, b) {
+	let acc = 0;
+	
+	for (let i = 0; i < a.length; i++) {
+		acc += a[i] * b[i];		
+	}
+
+	return i;
+}
+
+
+export function argMax(array) {
+  return [].reduce.call(array, (m, c, i, arr) => c > arr[m] ? i : m, 0)
+}
+
+
 export function identityMatrix() {
     return [1, 0, 0, 0,
         0, 1, 0, 0,
