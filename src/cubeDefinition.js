@@ -60,7 +60,7 @@ class Cubie {
 
 		const dirs = [
 			[0, 1, 0], [0, -1, 0], // up, down
-			[-1, 0, 0], [1, 0, 0], // left, right 
+			[-1, 0, 0], [1, 0, 0], // left, right
 			[0, 0, 1], [0, 0, -1], // front, back
 		];
 
@@ -111,7 +111,29 @@ export class RubiksCube {
 	}
 
 	applyMove(move, amount) {
-		switch (move[0]) {
+		const faces = {
+			"U": [0, -1, 0, 0],
+			"D": [0, 1, 0, 0],
+			"R": [-1, 0, 0, 0],
+			"L": [1, 0, 0, 0],
+			"B": [0, 0, 1, 0],
+			"F": [0, 0, -1, 0],
+		}
+
+		let selFace = faces[move[0]];
+
+		if (selFace == undefined) return;
+
+		let faceKeys = Object.keys(faces);
+		let vectors = Object.values(faces);
+
+		let rotatedV = vectors.map((v) => utils.multiplyMatrixVector(this.angle.toMatrix4(), v));
+
+		let best = utils.argMax(rotatedV.map((v) => utils.dot(v, selFace)));
+
+		let toRotate = faceKeys[best];
+
+		switch (toRotate) {
 			case "U":
 				this.turn(0, 1, 0, 1, 90 * amount);
 				break;
@@ -185,7 +207,7 @@ export class RubiksCube {
 		const worldMatrix = utils.MakeWorld(
 			0, 0, 0, // x, y, z
 			0, 30, 0,
-			// Math.sin(counter / 360) * 360, // example rotation 
+			// Math.sin(counter / 360) * 360, // example rotation
 			// Math.sin(counter / 360 + 2 / 3 * Math.PI) * 360,
 			// Math.sin(counter / 360 + 4 / 3 * Math.PI) * 360,
 			1 // scale

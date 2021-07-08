@@ -105,7 +105,7 @@ export async function get_objstr(url) {
     return text;
 }
 
-//function to convert decimal value of colors 
+//function to convert decimal value of colors
 export function decimalToHex(d, padding) {
     var hex = Number(d).toString(16);
     padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
@@ -122,7 +122,7 @@ export function decimalToHex(d, padding) {
 
 
 
-//*** SHADERS UTILS	
+//*** SHADERS UTILS
 /*Function to load a shader's code, compile it and return the handle to it
 Requires:
     path to the shader's text (url)
@@ -175,7 +175,7 @@ export function nextHighestPowerOfTwo(x) {
 }
 
 
-//*** Interaction UTILS	
+//*** Interaction UTILS
 export function initInteraction() {
     var keyFunction = function (e) {
 
@@ -225,6 +225,23 @@ export function initInteraction() {
 export function degToRad(angle) {
     return (angle * Math.PI / 180);
 }
+
+
+export function dot(a, b) {
+	let acc = 0;
+
+	for (let i = 0; i < a.length; i++) {
+		acc += a[i] * b[i];
+	}
+
+	return acc;
+}
+
+
+export function argMax(array) {
+  return [].reduce.call(array, (m, c, i, arr) => c > arr[m] ? i : m, 0)
+}
+
 
 export function identityMatrix() {
     return [1, 0, 0, 0,
@@ -537,7 +554,7 @@ export function MakeScaleMatrix(s) {
 export function MakeWorld(tx, ty, tz, rx, ry, rz, s) {
     //Creates a world matrix for an object.
     var out;
-    
+
     var Rx = this.MakeRotateXMatrix(ry);
     var Ry = this.MakeRotateYMatrix(rx);
     var Rz = this.MakeRotateZMatrix(rz);
