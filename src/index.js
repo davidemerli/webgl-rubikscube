@@ -69,7 +69,7 @@ function bindButtons(rubiksCube) {
     let keysPressed = {};
 
     rotations.forEach(id => {
-
+        
         //Logic of digital buttons
         document.getElementById(id).addEventListener("click", function () {
             rubiksCube.applyMove(id, 1);
@@ -81,7 +81,7 @@ function bindButtons(rubiksCube) {
         //Logic of physical buttons
         document.addEventListener('keydown', (e) => {
             keysPressed[e.key.toUpperCase()] = true;
-            //console.log(keysPressed);
+            console.log(keysPressed);
             if (keysPressed[id]) {
                 if (keysPressed['SHIFT']) {
                     rubiksCube.applyMove(id, -1);
@@ -97,15 +97,6 @@ function bindButtons(rubiksCube) {
             //console.log(keysPressed);
         });
     });
-
-
-
-    document.addEventListener('keydown', bindKey);
-
-    function bindKey(e) {
-        console.log(e);
-        rubiksCube.applyMove(e.key, 1);
-    }
 }
 
 window.onload = main;
