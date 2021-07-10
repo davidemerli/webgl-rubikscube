@@ -55,7 +55,7 @@ function bindButtons(rubiksCube) {
     let keysPressed = {};
 
     rotations.forEach(id => {
-
+        
         //Logic of digital buttons
         document.getElementById(id).addEventListener("click", function () {
             rubiksCube.applyMoveFromCamera(id, 1);
@@ -68,7 +68,6 @@ function bindButtons(rubiksCube) {
         //Logic of physical buttons
         document.addEventListener('keydown', (e) => {
             keysPressed[e.key.toUpperCase()] = true;
-
             if (keysPressed[id]) {
                 if (keysPressed['SHIFT']) {
                     rubiksCube.applyMoveFromCamera(id, -1);
