@@ -24,7 +24,6 @@ async function main() {
 
     let rubiksCube = new cubedef.RubiksCube(gl, program);
     rubiksCube.initMouseControl(canvas, rubiksCube);
-    //testRotations(rubiksCube);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
@@ -51,19 +50,6 @@ async function main() {
     bindButtons(rubiksCube);
 }
 
-//TODO: remove test functions
-async function testRotations(rubiksCube) {
-    for (let i = 0; i < 100; i++) {
-        rubiksCube.applyMove(choose(["R", "L", "U", "D", "B", "F"]), choose([1, -1]));
-        await cubedef.sleep(500);
-    }
-}
-
-function choose(choices) {
-    var index = Math.floor(Math.random() * choices.length);
-    return choices[index];
-}
-
 function bindButtons(rubiksCube) {
     const rotations = ["F", "L", "B", "R", "U", "D"];
     let keysPressed = {};
@@ -72,40 +58,36 @@ function bindButtons(rubiksCube) {
 
         //Logic of digital buttons
         document.getElementById(id).addEventListener("click", function () {
-            rubiksCube.applyMove(id, 1);
+            rubiksCube.applyMoveFromCamera(id, 1);
         });
+
         document.getElementById(id.concat("'")).addEventListener("click", function () {
-            rubiksCube.applyMove(id, -1);
+            rubiksCube.applyMoveFromCamera(id, -1);
         });
 
         //Logic of physical buttons
         document.addEventListener('keydown', (e) => {
             keysPressed[e.key.toUpperCase()] = true;
-            //console.log(keysPressed);
+
             if (keysPressed[id]) {
                 if (keysPressed['SHIFT']) {
-                    rubiksCube.applyMove(id, -1);
-                }
-                else {
-                    rubiksCube.applyMove(id, 1);
+                    rubiksCube.applyMoveFromCamera(id, -1);
+                } else {
+                    rubiksCube.applyMoveFromCamera(id, 1);
                 };
             };
         });
 
         document.addEventListener('keyup', (e) => {
             delete keysPressed[e.key.toUpperCase()];
-            //console.log(keysPressed);
         });
     });
 
-
-
-    document.addEventListener('keydown', bindKey);
-
-    function bindKey(e) {
-        console.log(e);
-        rubiksCube.applyMove(e.key, 1);
-    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key.toUpperCase() == 'S') {
+            rubiksCube.solveCube();
+        }
+    })
 }
 
 window.onload = main;

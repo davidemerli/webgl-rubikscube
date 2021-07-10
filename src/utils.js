@@ -5,11 +5,13 @@ export async function loadShaders() {
     return [vertexShader, fragmentShader];
 }
 
+
 export async function loadTextFile(url) {
     const file = await fetch(url);
 
     return await file.text();
 }
+
 
 export function hexToRgb(hex) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -217,9 +219,6 @@ export function initInteraction() {
 }
 
 
-
-
-
 //*** MATH LIBRARY
 
 export function degToRad(angle) {
@@ -228,6 +227,8 @@ export function degToRad(angle) {
 
 
 export function dot(a, b) {
+    // Array(a.length).reduce(i -> a[i] * bp)
+
 	let acc = 0;
 
 	for (let i = 0; i < a.length; i++) {

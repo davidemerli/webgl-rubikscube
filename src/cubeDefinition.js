@@ -1,12 +1,10 @@
+// import Cube from "../lib/cubejs/cube.js";
 import * as utils from "./utils.js";
+// import * as cube from "../lib/cubejs/cube.js";
 
 
-
-let currentAngle = [0, 0]
-
-var lastUpdateTime;
-var g_time = 0;
-
+let accX = 0.2, accY = 0.2;
+let velX = 0.0, velY = 0.0;
 
 class Cubie {
 	constructor(gl, program, x, y, z) {
@@ -78,18 +76,46 @@ class Cubie {
 	}
 }
 
-let counter = 0;
-
 export class RubiksCube {
 	constructor(gl, program) {
 		this.gl = gl;
 		this.program = program;
 		this.cubies = this.#initCubies(gl, program);
-		this.currentAngle = [0, 0];
-		this.angle = new Quaternion();
+		this.angle = Quaternion.fromEuler(0, utils.degToRad(30), 0);
 
 		this.rotating = false;
 
+		this.cube = new Cube();
+		this.initSolver = false;
+		this.solved = true;
+	}
+
+	async solveCube() {
+		if (this.solved) {
+			return;
+		}
+
+		if (!this.initSolver) {
+			Cube.initSolver();
+			this.initSolver = true;
+		}
+	
+		const moves = this.cube.solve().split(' ');
+
+		for (let i = 0; i < moves.length; i++) {
+			const move = moves[i];
+			const c = move[move.length - 1];
+
+			let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
+
+			console.log(move[0], amount);
+
+			this.applyMove(move[0], amount);
+
+			await sleep(1000);
+		}
+
+		this.solved = true;
 	}
 
 	#initCubies(gl, program) {
@@ -110,7 +136,7 @@ export class RubiksCube {
 		return cubies;
 	}
 
-	applyMove(move, amount) {
+	applyMoveFromCamera(move, amount) {
 		const faces = {
 			"U": [0, -1, 0, 0],
 			"D": [0, 1, 0, 0],
@@ -133,6 +159,12 @@ export class RubiksCube {
 
 		let toRotate = faceKeys[best];
 
+		this.applyMove(toRotate, amount);
+	}
+
+	applyMove(toRotate, amount) {
+		if (this.rotating) return;
+
 		switch (toRotate) {
 			case "U":
 				this.turn(0, 1, 0, 1, 90 * amount);
@@ -153,11 +185,16 @@ export class RubiksCube {
 				this.turn(0, 0, 1, -1, 90 * amount);
 				break;
 		}
+
+		this.cube.move(toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
+
+		console.log('moving', toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
+
+
+		this.solved = false;
 	}
 
 	async turn(rX, rY, rZ, index, amount) {
-		if (this.rotating) return;
-
 		const backwards = amount < 0;
 
 		amount = Math.abs(amount % 360);
@@ -188,14 +225,15 @@ export class RubiksCube {
 			});
 		}
 
-		g_time = 0
-		lastUpdateTime = 0
-
 		updateRotating(false);
 	}
 
 	draw() {
-		counter++;
+		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX));
+		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY));
+
+		//Limit the x-axis rotation range
+		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
 
 		const gl = this.gl;
 
@@ -264,14 +302,8 @@ export class RubiksCube {
 				//Rotate
 				if (dragging) {
 					var factor1 = 200 / canvas.height;//spinning speed
-					var dx1 = factor1 * (x - lastX);
-					var dy1 = factor1 * (y - lastY);
-
-					//Limit the x-axis rotation range
-					rubiksCube.currentAngle[0] = rubiksCube.currentAngle[0] + dy1;
-					rubiksCube.currentAngle[1] = rubiksCube.currentAngle[1] + dx1;
-
-					rubiksCube.angle = Quaternion.fromEuler(0, utils.degToRad(dy1), utils.degToRad(dx1)).mul(rubiksCube.angle);
+					velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
+					velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
 				}
 
 				//Update the previous position as the starting position
