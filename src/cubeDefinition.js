@@ -83,39 +83,30 @@ export class RubiksCube {
 		this.cubies = this.#initCubies(gl, program);
 		this.angle = Quaternion.fromEuler(0, utils.degToRad(30), 0);
 
-		this.rotating = false;
+		this.rotatingFunc = null;
+
+		this.moveQueue = []
 
 		this.cube = new Cube();
-		this.initSolver = false;
-		this.solved = true;
 	}
-
-	async solveCube() {
-		if (this.solved) {
-			return;
-		}
-
-		if (!this.initSolver) {
-			Cube.initSolver();
-			this.initSolver = true;
-		}
 	
-		const moves = this.cube.solve().split(' ');
+	async solveCube() {
+		if (this.cube.isSolved() || this.moveQueue.length > 0) return;
+		
+		fetch('https://mc.forgia.dev:5000/solve/' + this.cube.asString())
+			.then(response => response.text())
+			.then(async result => {
+				let moves = result.split(' ');
+				
+				for (let i = 0; i < moves.length; i++) {
+					const move = moves[i];
+					const c = move[move.length - 1];
 
-		for (let i = 0; i < moves.length; i++) {
-			const move = moves[i];
-			const c = move[move.length - 1];
+					let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
 
-			let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
-
-			console.log(move[0], amount);
-
-			this.applyMove(move[0], amount);
-
-			await sleep(1000);
-		}
-
-		this.solved = true;
+					this.moveQueue.push([move[0], amount]);
+				}
+			})
 	}
 
 	#initCubies(gl, program) {
@@ -137,6 +128,8 @@ export class RubiksCube {
 	}
 
 	applyMoveFromCamera(move, amount) {
+		// if (this.rotatingFunc != null) return;
+
 		const faces = {
 			"U": [0, -1, 0, 0],
 			"D": [0, 1, 0, 0],
@@ -159,12 +152,10 @@ export class RubiksCube {
 
 		let toRotate = faceKeys[best];
 
-		this.applyMove(toRotate, amount);
+		this.moveQueue.push([toRotate, amount]);
 	}
 
 	applyMove(toRotate, amount) {
-		if (this.rotating) return;
-
 		switch (toRotate) {
 			case "U":
 				this.turn(0, 1, 0, 1, 90 * amount);
@@ -187,26 +178,18 @@ export class RubiksCube {
 		}
 
 		this.cube.move(toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
-
-		console.log('moving', toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
-
-
-		this.solved = false;
 	}
 
 	async turn(rX, rY, rZ, index, amount) {
 		const backwards = amount < 0;
+		const speed = 30;
 
 		amount = Math.abs(amount % 360);
 
-		const speed = 5;
+		this.rotatingFunc = (deltaC) => {
+			deltaC *= speed;
+			deltaC = Math.min(deltaC, amount);
 
-		const updateRotating = (value) => this.rotating = value;
-
-		updateRotating(true);
-
-		for (let i = 0; i < amount / speed; i++) {
-			await sleep(10);
 
 			this.cubies.forEach((cubie) => {
 				if ((rX && Math.round(cubie.x) == index) ||
@@ -214,7 +197,7 @@ export class RubiksCube {
 					(rZ && Math.round(cubie.z) == index)) {
 
 					cubie.matrix = [
-						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (backwards ? -speed : speed)),
+						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (backwards ? -deltaC : deltaC)),
 						cubie.matrix,
 					].reduce(utils.multiplyMatrices)
 				}
@@ -223,51 +206,33 @@ export class RubiksCube {
 				cubie.y = cubie.matrix[7];
 				cubie.z = cubie.matrix[11];
 			});
-		}
 
-		updateRotating(false);
+			console.log(amount)
+			amount -= deltaC;
+
+			if (amount == 0) {
+				this.rotatingFunc = null;
+			}
+		}
 	}
 
-	draw() {
-		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX));
-		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY));
+	update(deltaC) {
+		if (this.rotatingFunc != null) {
+			this.rotatingFunc(deltaC);
+		} else if (this.moveQueue.length > 0) {
+			let toRotate, amount;
+			[toRotate, amount] = this.moveQueue.shift();
+
+			this.applyMove(toRotate, amount);
+		}
+		
+		// console.log(deltaC)
+
+		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC;
+		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY)) * deltaC;
 
 		//Limit the x-axis rotation range
 		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
-
-		const gl = this.gl;
-
-		const aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
-		const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
-		const viewMatrix = utils.MakeView(0, 0, 5, 0, 0);
-
-		//TODO: make rotation mouse controllable
-		const worldMatrix = utils.MakeWorld(
-			0, 0, 0, // x, y, z
-			0, 30, 0,
-			// Math.sin(counter / 360) * 360, // example rotation
-			// Math.sin(counter / 360 + 2 / 3 * Math.PI) * 360,
-			// Math.sin(counter / 360 + 4 / 3 * Math.PI) * 360,
-			1 // scale
-		);
-
-
-
-
-		this.cubies.forEach(cubie => {
-			const projectionMatrix = [
-				perspectiveMatrix,
-				viewMatrix,
-				worldMatrix,
-				this.angle.toMatrix4(),
-				cubie.matrix,
-			].reduce(utils.multiplyMatrices);
-
-			gl.uniformMatrix4fv(cubie.matrixLocation, gl.FALSE, utils.transposeMatrix(projectionMatrix));
-			gl.bindVertexArray(cubie.vao);
-
-			gl.drawElements(gl.TRIANGLES, INDICES.length, gl.UNSIGNED_SHORT, 0);
-		});
 	}
 
 	//Add mouse interaction on canvas
@@ -341,7 +306,7 @@ const IN_VERTICES = [		// Vertex #:
 	-0.5, 0.5, -0.5   	// 23
 ];
 
-const INDICES = [ 	// Face #:
+export const INDICES = [ 	// Face #:
 	0, 1, 2,	//  0
 	1, 18, 2,    //  1
 	3, 4, 5,    //  2
@@ -367,32 +332,6 @@ export function makeColorGradient(f, center, width) {
 	return [r / 255, g / 255, b / 255]
 }
 
-// var colors = [					// Color #:
-// 	0.0, 1.0, 1.0, 	//  0
-// 	0.0, 1.0, 1.0,  //  1
-// 	0.0, 1.0, 1.0,  //  2
-// 	0.0, 0.0, 1.0,  //  3
-// 	0.0, 0.0, 1.0,  //  4
-// 	0.0, 0.0, 1.0,  //  5
-// 	1.0, 0.0, 0.0,  //  6
-// 	1.0, 0.0, 0.0,  //  7
-// 	1.0, 0.0, 0.0,  //  8
-// 	1.0, 1.0, 0.0,  //  9
-// 	1.0, 1.0, 0.0,  // 10
-// 	1.0, 1.0, 0.0,  // 11
-// 	1.0, 0.0, 1.0,  // 12
-// 	1.0, 0.0, 1.0,  // 13
-// 	1.0, 0.0, 1.0,  // 14
-// 	0.0, 1.0, 0.0,  // 15
-// 	0.0, 1.0, 0.0,  // 16
-// 	0.0, 1.0, 0.0,  // 17
-// 	0.0, 1.0, 1.0,  // 18
-// 	0.0, 0.0, 1.0,  // 19
-// 	1.0, 0.0, 0.0,  // 20
-// 	1.0, 1.0, 0.0,  // 21
-// 	1.0, 0.0, 1.0,  // 22
-// 	0.0, 1.0, 0.0   // 23
-// ];
 
 const red = utils.hexToRgb('#b71234');
 const green = utils.hexToRgb('#009b48');

@@ -28,12 +28,25 @@ async function main() {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
+
+    let lastUpdateTime = 0;
+
+    function animate() {
+        var currentTime = (new Date).getTime();
+        var deltaC = (30 * (currentTime - lastUpdateTime)) / 1000.0;
+
+        rubiksCube.update(deltaC);
+
+        lastUpdateTime = currentTime;
+    }
+
     function drawScene() {
+        animate();
 
         //use this aspect ratio to keep proportions
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        // let c = cubedef.makeColorGradient(utils.degToRad(new Date().getMilliseconds() % 360) * 0.5);
+        // let c = cubedef.makeColorGradient(utils.degToRad(new Date().getMilliseconds() % 360) * 0.01);
         let c = [0.9, 0.9, 0.9];
 
         gl.clearColor(c[0], c[1], c[2], 1);
@@ -41,7 +54,33 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.enable(gl.DEPTH_TEST);
 
-        rubiksCube.draw();
+        const aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
+        const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
+        const viewMatrix = utils.MakeView(0, 0, 5, 0, 0);
+
+        //TODO: make rotation mouse controllable
+        const worldMatrix = utils.MakeWorld(
+            0, 0, 0, // x, y, z
+            0, 30, 0,
+            1 // scale
+        );
+    
+        rubiksCube.cubies.forEach(cubie => {
+            const projectionMatrix = [
+                perspectiveMatrix,
+                viewMatrix,
+                worldMatrix,
+                rubiksCube.angle.toMatrix4(),
+                cubie.matrix,
+            ].reduce(utils.multiplyMatrices);
+
+            gl.uniformMatrix4fv(cubie.matrixLocation, gl.FALSE, utils.transposeMatrix(projectionMatrix));
+            gl.bindVertexArray(cubie.vao);
+
+            gl.drawElements(gl.TRIANGLES, cubedef.INDICES.length, gl.UNSIGNED_SHORT, 0);
+        });
+
+        // rubiksCube.draw();
 
         window.requestAnimationFrame(drawScene);
     }
@@ -87,6 +126,13 @@ function bindButtons(rubiksCube) {
             rubiksCube.solveCube();
         }
     })
+}
+
+async function runApp() {
+    await Promise.all([
+        (async () => await main())(),
+        // (async () => await Cube.initSolver())(),
+    ])
 }
 
 window.onload = main;
