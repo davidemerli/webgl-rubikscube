@@ -16,6 +16,7 @@ async function main() {
     }
 
     utils.resizeCanvasToDisplaySize(gl.canvas);
+    cubedef.initMouseControl(canvas);
 
     // create GLSL shaders, upload the GLSL source, compile the shaders and link them
     var vertexShader = utils.createShader(gl, gl.VERTEX_SHADER, shaders[0]);
@@ -23,7 +24,6 @@ async function main() {
     var program = utils.createProgram(gl, vertexShader, fragmentShader);
 
     let rubiksCube = new cubedef.RubiksCube(gl, program);
-    rubiksCube.initMouseControl(canvas, rubiksCube);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);

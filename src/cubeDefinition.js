@@ -254,49 +254,6 @@ export class RubiksCube {
 		//Limit the x-axis rotation range
 		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
 	}
-
-	//Add mouse interaction on canvas
-	initMouseControl(canvas, rubiksCube) {
-		var lastX = -1, lastY = -1;
-		var dragging = false;
-
-		canvas.onmousedown = function (event) {//Press the mouse to trigger the listening event
-			var x = event.clientX, y = event.clientY;
-
-			if (event.button == 0) {//Left mouse buttons
-				var rect1 = event.target.getBoundingClientRect();
-
-				if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
-					lastX = x;
-					lastY = y;
-					dragging = true;
-				}
-			}
-
-			//Release the mouse
-			canvas.onmouseup = function (event) {
-				if (event.button == 0) {
-					dragging = false;
-				}
-			};
-
-			//Move the mouse
-			canvas.onmousemove = function (event) {//Mouse movement monitoring
-				var x = event.clientX, y = event.clientY;
-
-				//Rotate
-				if (dragging) {
-					var factor1 = 200 / canvas.height;//spinning speed
-					velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
-					velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
-				}
-
-				//Update the previous position as the starting position
-				lastX = x;
-				lastY = y;
-			}
-		}
-	}
 }
 
 const IN_VERTICES = [		// Vertex #:
@@ -392,4 +349,83 @@ export function getColorArray(up, down, left, right, front, back) {
 	return [].concat(...colors);
 }
 
-export const sleep = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
+//Add mouse interaction on canvas
+export function initMouseControl(canvas) {
+	var lastX = -1, lastY = -1;
+	var dragging = false;
+
+	canvas.onmousedown = function (event) {//Press the mouse to trigger the listening event
+		var x = event.clientX, y = event.clientY;
+
+		if (event.button == 0) {//Left mouse buttons
+			var rect1 = event.target.getBoundingClientRect();
+
+			if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
+				lastX = x;
+				lastY = y;
+				dragging = true;
+			}
+		}
+	}
+	//Release the mouse
+	canvas.onmouseup = function (event) {
+		if (event.button == 0) {
+			dragging = false;
+		}
+	};
+
+	//Move the mouse
+	canvas.onmousemove = function (event) {//Mouse movement monitoring
+		var x = event.clientX, y = event.clientY;
+
+		//Rotate
+		if (dragging) {
+			var factor1 = 200 / canvas.height;//spinning speed
+			velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
+			velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
+		}
+
+		//Update the previous position as the starting position
+		lastX = x;
+		lastY = y;
+	}
+
+	canvas.addEventListener("touchstart", handleStart, false);
+
+	function handleStart(event) {
+		var touch = event.changedTouches[0]
+		var x = touch.clientX, y = touch.clientY;
+
+		var rect1 = event.target.getBoundingClientRect();
+
+		if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
+			lastX = x;
+			lastY = y;
+			dragging = true;
+		}
+	}
+
+	canvas.addEventListener("touchend", handleEnd, false);
+
+	function handleEnd(event) {
+		dragging = false;
+	}
+
+	canvas.addEventListener("touchmove", handleMove, false);
+
+	function handleMove(event) {
+		var touch = event.changedTouches[0]
+		var x = touch.clientX, y = touch.clientY;
+
+		//Rotate
+		if (dragging) {
+			var factor1 = 200 / canvas.height;//spinning speed
+			velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
+			velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
+		}
+
+		//Update the previous position as the starting position
+		lastX = x;
+		lastY = y;
+	}
+}
