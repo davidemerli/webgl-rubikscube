@@ -90,6 +90,25 @@ export class RubiksCube {
 		this.cube = new Cube();
 	}
 	
+	scramble() {
+		if (this.moveQueue.length > 0) return;
+
+		fetch('https://mc.forgia.dev:5000/scramble')
+			.then(response => response.text())
+			.then(async result => {
+				let moves = result.split(' ');
+
+				for (let i = 0; i < moves.length; i++) {
+					const move = moves[i];
+					const c = move[move.length - 1];
+
+					let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
+
+					this.moveQueue.push([move[0], amount]);
+				}
+			})
+	}
+
 	async solveCube() {
 		if (this.cube.isSolved() || this.moveQueue.length > 0) return;
 		
@@ -178,6 +197,8 @@ export class RubiksCube {
 		}
 
 		this.cube.move(toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
+
+		console.log(this.cube.asString())
 	}
 
 	async turn(rX, rY, rZ, index, amount) {
@@ -207,7 +228,6 @@ export class RubiksCube {
 				cubie.z = cubie.matrix[11];
 			});
 
-			console.log(amount)
 			amount -= deltaC;
 
 			if (amount == 0) {

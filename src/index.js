@@ -125,6 +125,9 @@ function bindButtons(rubiksCube) {
         if (e.key.toUpperCase() == 'S') {
             rubiksCube.solveCube();
         }
+        if (e.key.toUpperCase() == 'Z') {
+            rubiksCube.scramble();
+        }
     })
 }
 
