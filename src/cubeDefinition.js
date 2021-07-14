@@ -1,95 +1,92 @@
-// import Cube from "../lib/cubejs/cube.js";
 import * as utils from "./utils.js";
-// import * as cube from "../lib/cubejs/cube.js";
 
 
 let accX = 0.2, accY = 0.2;
 let velX = 0.0, velY = 0.0;
 
 class Cubie {
-	constructor(gl, program, x, y, z) {
-		const spacing = 0.03;
+	constructor(gl, program, x, y, z, size) {
+		return (async () => {
 
-		this.x = x;
-		this.y = y;
-		this.z = z;
+			this.x = x;
+			this.y = y;
+			this.z = z;
 
-		this.colors = this.#initColors();
+			this.matrix = utils.MakeTranslateMatrix(
+				this.x * (size),
+				this.y * (size),
+				this.z * (size),
+			);
 
-		this.positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-		this.colorAttributeLocation = gl.getAttribLocation(program, "a_color");
-		this.matrixLocation = gl.getUniformLocation(program, "matrix");
+			this.mesh = await this.initMesh(gl);
 
-		this.matrix = utils.MakeTranslateMatrix(
-			x * (1 + spacing),
-			y * (1 + spacing),
-			z * (1 + spacing),
-		);
+			this.vao = this.initVAO(gl, program, this.mesh);
 
-		this.vao = this.#initVAO(gl);
+			return this;
+		})();
 	}
 
-	#initVAO(gl) {
-		const vao = gl.createVertexArray();
+	initVAO(gl, program, mesh) {
+		let vao = gl.createVertexArray();
 		gl.bindVertexArray(vao);
 
-		// Create a buffer and put three 2d clip space points in it
-		const positionBuffer = gl.createBuffer();
+		var positionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(IN_VERTICES), gl.STATIC_DRAW);
-		gl.enableVertexAttribArray(this.positionAttributeLocation);
-		gl.vertexAttribPointer(this.positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertices), gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(program.POSITION_ATTRIBUTE);
+		gl.vertexAttribPointer(program.POSITION_ATTRIBUTE, 3, gl.FLOAT, false, 0, 0);
 
-		const colorBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
-		gl.enableVertexAttribArray(this.colorAttributeLocation);
-		gl.vertexAttribPointer(this.colorAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+		var normalBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexNormals), gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(program.NORMAL_ATTRIBUTE);
+		gl.vertexAttribPointer(program.NORMAL_ATTRIBUTE, 3, gl.FLOAT, false, 0, 0);
 
-		const indexBuffer = gl.createBuffer();
+		var uvBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.textures), gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(program.UV_ATTRIBUTE);
+		gl.vertexAttribPointer(program.UV_ATTRIBUTE, 2, gl.FLOAT, false, 0, 0);
+
+		var indexBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(INDICES), gl.STATIC_DRAW);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.indices), gl.STATIC_DRAW);
 
 		return vao;
 	}
 
-	#initColors() {
-		this.colors = [white, yellow, orange, red, green, blue];
+	async initMesh(gl) {
+		let objStr;
 
-		const dirs = [
-			[0, 1, 0], [0, -1, 0], // up, down
-			[-1, 0, 0], [1, 0, 0], // left, right
-			[0, 0, 1], [0, 0, -1], // front, back
-		];
+		try {
+			objStr = await utils.get_objstr("assets/cubies/cube" + this.x + this.y + this.z + ".obj");
+		} catch (error) {
+			objStr = await utils.get_objstr("assets/cube.obj");
+		}
 
-		dirs.forEach((dir, i) => {
-			const xx = this.x + dir[0];
-			const yy = this.y + dir[1];
-			const zz = this.z + dir[2];
-
-			if (Math.min(xx, yy, zz) != -2 && Math.max(xx, yy, zz) != 2) {
-				this.colors[i] = black;
-			}
-		});
-
-		return getColorArray.apply(this, this.colors);
+		return new OBJ.Mesh(objStr);;
 	}
 }
 
 export class RubiksCube {
 	constructor(gl, program) {
-		this.gl = gl;
-		this.program = program;
-		this.cubies = this.#initCubies(gl, program);
-		this.angle = Quaternion.fromEuler(0, utils.degToRad(30), 0);
+		return (async () => {
+			this.gl = gl;
+			this.program = program;
+			this.size = 1.85;
+			this.cubies = await this.initCubies(gl, program);
+			this.angle = Quaternion.fromEuler(0, utils.degToRad(30), 0);
 
-		this.rotatingFunc = null;
+			this.rotatingFunc = null;
 
-		this.moveQueue = []
+			this.moveQueue = []
 
-		this.cube = new Cube();
+			this.cube = new Cube();
+
+			return this;
+		})();
 	}
-	
+
 	scramble() {
 		if (this.moveQueue.length > 0) return;
 
@@ -106,17 +103,17 @@ export class RubiksCube {
 
 					this.moveQueue.push([move[0], amount]);
 				}
-			})
+			});
 	}
 
 	async solveCube() {
 		if (this.cube.isSolved() || this.moveQueue.length > 0) return;
-		
+
 		fetch('https://mc.forgia.dev:5000/solve/' + this.cube.asString())
 			.then(response => response.text())
 			.then(async result => {
 				let moves = result.split(' ');
-				
+
 				for (let i = 0; i < moves.length; i++) {
 					const move = moves[i];
 					const c = move[move.length - 1];
@@ -125,10 +122,10 @@ export class RubiksCube {
 
 					this.moveQueue.push([move[0], amount]);
 				}
-			})
+			});
 	}
 
-	#initCubies(gl, program) {
+	async initCubies(gl, program) {
 		let cubies = [];
 
 		// Creating the coordinates of the cubies
@@ -136,9 +133,11 @@ export class RubiksCube {
 			for (let y = -1; y <= 1; y++) {
 				for (let z = -1; z <= 1; z++) {
 
-					if (x == 0 && y == 0 && z == 0) continue;
 
-					cubies.push(new Cubie(gl, program, x, y, z));
+					// if (x == 1 && y == 1 && Math.abs(z) == 1 || (x == 0 && y == 0 && z == 0)) {
+					cubies.push(await new Cubie(gl, program, x, y, z, this.size));
+					console.log(x, y, z)
+					// }
 				}
 			}
 		}
@@ -211,26 +210,26 @@ export class RubiksCube {
 			deltaC *= speed;
 			deltaC = Math.min(deltaC, amount);
 
-
-			this.cubies.forEach((cubie) => {
-				if ((rX && Math.round(cubie.x) == index) ||
-					(rY && Math.round(cubie.y) == index) ||
-					(rZ && Math.round(cubie.z) == index)) {
-
+			this.cubies.filter((cubie) =>
+				(rX && Math.round(cubie.x) == index) ||
+				(rY && Math.round(cubie.y) == index) ||
+				(rZ && Math.round(cubie.z) == index))
+				.forEach((cubie) => {
 					cubie.matrix = [
 						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (backwards ? -deltaC : deltaC)),
 						cubie.matrix,
 					].reduce(utils.multiplyMatrices)
-				}
-
-				cubie.x = cubie.matrix[3];
-				cubie.y = cubie.matrix[7];
-				cubie.z = cubie.matrix[11];
-			});
+				});
 
 			amount -= deltaC;
 
 			if (amount == 0) {
+				this.cubies.forEach((cubie) => {
+					cubie.x = cubie.matrix[3] / this.size;
+					cubie.y = cubie.matrix[7] / this.size;
+					cubie.z = cubie.matrix[11] / this.size;
+				});
+
 				this.rotatingFunc = null;
 			}
 		}
@@ -245,7 +244,7 @@ export class RubiksCube {
 
 			this.applyMove(toRotate, amount);
 		}
-		
+
 		// console.log(deltaC)
 
 		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC;
@@ -256,48 +255,6 @@ export class RubiksCube {
 	}
 }
 
-const IN_VERTICES = [		// Vertex #:
-	0.5, 0.5, -0.5, 	//  0
-	0.5, -0.5, -0.5,  	//  1
-	-0.5, 0.5, -0.5,  	//  2
-	0.5, 0.5, 0.5,  	//  3
-	-0.5, 0.5, 0.5,  	//  4
-	0.5, -0.5, 0.5,  	//  5
-	0.5, 0.5, -0.5,  	//  6
-	0.5, 0.5, 0.5,  	//  7
-	0.5, -0.5, -0.5,  	//  8
-	0.5, -0.5, -0.5,  	//  9
-	0.5, -0.5, 0.5,  	// 10
-	-0.5, -0.5, -0.5,  	// 11
-	-0.5, -0.5, -0.5,  	// 12
-	-0.5, -0.5, 0.5,  	// 13
-	-0.5, 0.5, -0.5,  	// 14
-	0.5, 0.5, 0.5,  	// 15
-	0.5, 0.5, -0.5,  	// 16
-	-0.5, 0.5, 0.5,  	// 17
-	-0.5, -0.5, -0.5,  	// 18
-	-0.5, -0.5, 0.5,  	// 19
-	0.5, -0.5, 0.5,  	// 20
-	-0.5, -0.5, 0.5,  	// 21
-	-0.5, 0.5, 0.5,  	// 22
-	-0.5, 0.5, -0.5   	// 23
-];
-
-export const INDICES = [ 	// Face #:
-	0, 1, 2,	//  0
-	1, 18, 2,    //  1
-	3, 4, 5,    //  2
-	4, 19, 5,    //  3
-	6, 7, 8,    //  4
-	7, 20, 8,    //  5
-	9, 10, 11,    //  6
-	10, 21, 11,    //  7
-	12, 13, 14,    //  8
-	13, 22, 14,    //  9
-	15, 16, 17,    // 10
-	16, 23, 17     // 11
-];
-
 export function makeColorGradient(f, center, width) {
 	if (center == undefined) center = 128;
 	if (width == undefined) width = 127;
@@ -307,46 +264,6 @@ export function makeColorGradient(f, center, width) {
 	var b = Math.sin(f + 4 / 3 * Math.PI) * width + center;
 
 	return [r / 255, g / 255, b / 255]
-}
-
-
-const red = utils.hexToRgb('#b71234');
-const green = utils.hexToRgb('#009b48');
-const blue = utils.hexToRgb('#0046ad');
-const yellow = utils.hexToRgb('#ffd500');
-const orange = utils.hexToRgb('#ff5800');
-const white = utils.hexToRgb('#ffffff');
-const black = utils.hexToRgb('#000000');
-
-export function getColorArray(up, down, left, right, front, back) {
-	let colors = [    // Color #:
-		back, 	//  0
-		back,  	//  1
-		back,  	//  2
-		front,  //  3
-		front,  //  4
-		front,  //  5
-		right,  //  6
-		right,  //  7
-		right,  //  8
-		down,  	//  9
-		down,  	// 10
-		down,  	// 11
-		left,  	// 12
-		left,  	// 13
-		left,  	// 14
-		up,  	// 15
-		up,  	// 16
-		up,  	// 17
-		back,  	// 18
-		front,  // 19
-		right,  // 20
-		down,  	// 21
-		left,  	// 22
-		up   	// 23
-	];
-	// return colors as a list of real values and not a list of lists
-	return [].concat(...colors);
 }
 
 //Add mouse interaction on canvas

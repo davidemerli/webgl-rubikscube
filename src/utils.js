@@ -100,8 +100,8 @@ export async function get_json(url, func) {
 export async function get_objstr(url) {
     var response = await fetch(url);
     if (!response.ok) {
-        alert('Network response was not ok');
-        return;
+        // alert('Network response was not ok');
+        throw Exception();
     }
     var text = await response.text();
     return text;
@@ -139,17 +139,16 @@ export function getTexture(context, image_URL) {
     image.isLoaded = false;
 
     image.onload = function (e) {
-
         var texture = context.createTexture();
 
         context.bindTexture(context.TEXTURE_2D, texture);
 
         context.texImage2D(context.TEXTURE_2D, 0, context.RGBA, context.RGBA, context.UNSIGNED_BYTE, image);
-        //context.pixelStorei(context.UNPACK_FLIP_Y_WEBGL, 1);
-        context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_S, context.CLAMP_TO_EDGE);
-        context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_T, context.CLAMP_TO_EDGE);
+        // context.pixelStorei(context.UNPACK_FLIP_Y_WEBGL, 1);
         context.texParameteri(context.TEXTURE_2D, context.TEXTURE_MAG_FILTER, context.LINEAR);
         context.texParameteri(context.TEXTURE_2D, context.TEXTURE_MIN_FILTER, context.NEAREST_MIPMAP_LINEAR);
+        context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_S, context.CLAMP_TO_EDGE);
+        context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_T, context.CLAMP_TO_EDGE);
         context.generateMipmap(context.TEXTURE_2D);
 
         context.bindTexture(context.TEXTURE_2D, null);
@@ -161,8 +160,6 @@ export function getTexture(context, image_URL) {
 
     return image;
 }
-
-
 
 export function isPowerOfTwo(x) {
     return (x & (x - 1)) == 0;
