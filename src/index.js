@@ -1,6 +1,8 @@
 import * as utils from "./utils.js";
 import * as cubedef from "./cubeDefinition.js";
 
+let zoom = 10;
+
 async function main() {
     var shaders = await utils.loadShaders(); // [vs, fs]
 
@@ -89,31 +91,31 @@ async function main() {
 
         const aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
         const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
-        const viewMatrix = utils.MakeView(0, 0, 10, 0, 0);
+        const viewMatrix = utils.MakeView(0, 0, zoom, 0, 0);
 
         const worldMatrix = utils.MakeWorld(
             0, 0, 0, // x, y, z
             0, 30, 0,
             1 // scale
         );
-        
+
         rubiksCube.cubies.forEach(cubie => {
-            
+
             const cubeMatrix = [
                 rubiksCube.angle.toMatrix4(),
                 cubie.matrix,
             ].reduce(utils.multiplyMatrices);
-            
+
             const viewWorldMatrix = [
                 viewMatrix,
                 worldMatrix,
                 cubeMatrix,
             ].reduce(utils.multiplyMatrices);
-           
+
             const projectionMatrix = [
                 perspectiveMatrix,
                 viewWorldMatrix,
-                
+
             ].reduce(utils.multiplyMatrices);
 
             const normalTransformationMatrix = utils.invertMatrix(utils.transposeMatrix(viewWorldMatrix));
@@ -125,12 +127,12 @@ async function main() {
 
             gl.uniformMatrix4fv(program.MATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(projectionMatrix));
             gl.uniformMatrix4fv(program.NORMALMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(normalTransformationMatrix));
-            
-            
+
+
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, imgtx.webglTexture);
             gl.uniform1i(program.TEXTURE_ATTRIBUTE, 0);
-            
+
             gl.bindVertexArray(cubie.vao);
 
             gl.drawElements(gl.TRIANGLES, cubie.mesh.indices.length, gl.UNSIGNED_SHORT, 0);
@@ -147,6 +149,11 @@ async function main() {
 function bindButtons(rubiksCube) {
     const rotations = ["F", "L", "B", "R", "U", "D"];
     let keysPressed = {};
+
+    // scroll with mouse wheel
+    document.onwheel = function (e) {
+        zoom += e.deltaY > 0 ? 0.2 : -0.2;
+    };
 
     rotations.forEach(id => {
 

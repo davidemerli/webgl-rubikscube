@@ -19,29 +19,45 @@ canvas {
   background-color: white;
   width: 70px;
   background: none;
-  /*border: solid black 3px;
-    border-radius: 10px;
-    color: black;
-    padding: 15px 30px;*/
   text-align: center;
   text-decoration: none;
   display: inline-block;
   font-size: 16px;
   margin: 4px 4px;
   cursor: pointer;
-  transition: 0.5s;
+  transition: 0.2s;
 }
 
 .btn:hover {
   color: white;
-  -webkit-transform: scale(1.2);
-  -ms-transform: scale(1.2);
-  transform: scale(1.2);
-  -webkit-filter: drop-shadow(5px 5px 5px #222);
-  filter: drop-shadow(5px 5px 5px #222);
+  -webkit-transform: scale(1.15);
+  -ms-transform: scale(1.15);
+  transform: scale(1.15);
+  -webkit-filter: drop-shadow(4px 4px 4px #222);
+  filter: drop-shadow(4px 4px 4px #222);
+}
+
+#legend {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  position: absolute; 
+  z-index: 1; 
+  left: 0%; 
+  bottom: 0; 
+  width:60%; 
+  height: 20%;
+  margin-left: 20%;
+  margin-right: 20%;
+  background: rgba(225, 225, 225, 0); 
+  opacity: 0.9; 
+  padding: 5px 10px 5px 10px; 
+  overflow:auto; 
+  display: flex;
 }
 
 .legend {
+  user-select: none;
   position: absolute; 
   z-index: 1; 
   bottom: 0; 
