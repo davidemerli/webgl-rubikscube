@@ -5,13 +5,11 @@ export async function loadShaders() {
     return [vertexShader, fragmentShader];
 }
 
-
 export async function loadTextFile(url) {
     const file = await fetch(url);
 
     return await file.text();
 }
-
 
 export function hexToRgb(hex) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -22,6 +20,36 @@ export function hexToRgb(hex) {
     ] : null;
 }
 
+export let paramBlend = (param, t) => {    
+    const sqt = t * t;
+    return sqt / (param * (sqt - t) + 1.0);
+};
+
+export const randBetween = (min, max) => {
+    return Math.random() * (max - min) + min;
+};
+
+export const bezier = (t) => t * t * (3.0 - 2.0 * t);
+
+export function makeColorGradient(f, center, width) {
+    if (center == undefined) center = 128;
+    if (width == undefined) width = 127;
+
+    var r = Math.sin(f) * width + center;
+    var g = Math.sin(f + 2 / 3 * Math.PI) * width + center;
+    var b = Math.sin(f + 4 / 3 * Math.PI) * width + center;
+
+    return [r / 255, g / 255, b / 255]
+}
+
+export function sleep(milliseconds) {
+	var start = new Date().getTime();
+	for (var i = 0; i < 1e7; i++) {
+		if ((new Date().getTime() - start) > milliseconds) {
+			break;
+		}
+	}
+}
 
 //Utils ver. 0.4
 //Includes minimal mat3 support
@@ -226,18 +254,18 @@ export function degToRad(angle) {
 export function dot(a, b) {
     // Array(a.length).reduce(i -> a[i] * bp)
 
-	let acc = 0;
+    let acc = 0;
 
-	for (let i = 0; i < a.length; i++) {
-		acc += a[i] * b[i];
-	}
+    for (let i = 0; i < a.length; i++) {
+        acc += a[i] * b[i];
+    }
 
-	return acc;
+    return acc;
 }
 
 
 export function argMax(array) {
-  return [].reduce.call(array, (m, c, i, arr) => c > arr[m] ? i : m, 0)
+    return [].reduce.call(array, (m, c, i, arr) => c > arr[m] ? i : m, 0)
 }
 
 

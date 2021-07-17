@@ -75,7 +75,7 @@ export class RubiksCube {
 			this.program = program;
 			this.size = 1.85;
 			this.cubies = await this.initCubies(gl, program);
-			this.angle = Quaternion.fromEuler(0, utils.degToRad(30), 0);
+			this.angle = Quaternion.fromEuler(0, 0, 0);
 
 			this.rotatingFunc = null;
 
@@ -132,12 +132,8 @@ export class RubiksCube {
 		for (let x = -1; x <= 1; x++) {
 			for (let y = -1; y <= 1; y++) {
 				for (let z = -1; z <= 1; z++) {
-
-
-					// if (x == 1 && y == 1 && Math.abs(z) == 1 || (x == 0 && y == 0 && z == 0)) {
 					cubies.push(await new Cubie(gl, program, x, y, z, this.size));
 					console.log(x, y, z)
-					// }
 				}
 			}
 		}
@@ -146,8 +142,6 @@ export class RubiksCube {
 	}
 
 	applyMoveFromCamera(move, amount) {
-		// if (this.rotatingFunc != null) return;
-
 		const faces = {
 			"U": [0, -1, 0, 0],
 			"D": [0, 1, 0, 0],
@@ -201,29 +195,43 @@ export class RubiksCube {
 	}
 
 	async turn(rX, rY, rZ, index, amount) {
+		const speed = 500;
 		const backwards = amount < 0;
-		const speed = 30;
 
 		amount = Math.abs(amount % 360);
 
-		this.rotatingFunc = (deltaC) => {
-			deltaC *= speed;
-			deltaC = Math.min(deltaC, amount);
+		let prevX = 0.0;
+		let prevY = 0.0;
 
+		const paramBlendFunc = utils.paramBlend;
+		const blendParam = utils.randBetween(2.0, 2.4);
+
+		const func = (x) => (backwards ? -1 : 1) * paramBlendFunc(blendParam, x / amount) * amount;
+
+		this.rotatingFunc = async (deltaC) =>  {
+			deltaC *= speed;
+			deltaC = Math.min(deltaC, amount - prevX);
+
+			const y = func(prevX, amount);
+			
+			console.log(blendParam);
+
+			//TODO make the filter a more clear predicate
 			this.cubies.filter((cubie) =>
 				(rX && Math.round(cubie.x) == index) ||
 				(rY && Math.round(cubie.y) == index) ||
 				(rZ && Math.round(cubie.z) == index))
 				.forEach((cubie) => {
 					cubie.matrix = [
-						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (backwards ? -deltaC : deltaC)),
+						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (y - prevY)),
 						cubie.matrix,
 					].reduce(utils.multiplyMatrices)
 				});
 
-			amount -= deltaC;
+			prevX += deltaC;
+			prevY = y;
 
-			if (amount == 0) {
+			if (amount == Math.abs(y)) {
 				this.cubies.forEach((cubie) => {
 					cubie.x = cubie.matrix[3] / this.size;
 					cubie.y = cubie.matrix[7] / this.size;
@@ -235,7 +243,7 @@ export class RubiksCube {
 		}
 	}
 
-	update(deltaC) {
+	async update(deltaC) {
 		if (this.rotatingFunc != null) {
 			this.rotatingFunc(deltaC);
 		} else if (this.moveQueue.length > 0) {
@@ -247,24 +255,14 @@ export class RubiksCube {
 
 		// console.log(deltaC)
 
-		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC;
-		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY)) * deltaC;
+		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC * 30;
+		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY)) * deltaC * 30;
 
 		//Limit the x-axis rotation range
 		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
 	}
 }
 
-export function makeColorGradient(f, center, width) {
-	if (center == undefined) center = 128;
-	if (width == undefined) width = 127;
-
-	var r = Math.sin(f) * width + center;
-	var g = Math.sin(f + 2 / 3 * Math.PI) * width + center;
-	var b = Math.sin(f + 4 / 3 * Math.PI) * width + center;
-
-	return [r / 255, g / 255, b / 255]
-}
 
 //Add mouse interaction on canvas
 export function initMouseControl(canvas) {
@@ -322,12 +320,7 @@ export function initMouseControl(canvas) {
 		}
 	}
 
-	canvas.addEventListener("touchend", handleEnd, false);
-
-	function handleEnd(event) {
-		dragging = false;
-	}
-
+	canvas.addEventListener("touchend", () => dragging = false, false);
 	canvas.addEventListener("touchmove", handleMove, false);
 
 	function handleMove(event) {
