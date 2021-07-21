@@ -26,9 +26,9 @@ void main() {
 
   // compute final color
   vec3 finalColor = 
-    0.5 * diffuse + 
+    1.5 * diffuse + 
     0.45 * ambient + 
-    0.1 * specular;
+    1.0 * specular;
     
   outColor = vec4(finalColor, 1.0) * texture(u_texture, fs_uv);
 }

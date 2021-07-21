@@ -50,6 +50,7 @@ async function main() {
     const cubeMaterialColor = [0.5, 0.5, 0.5];
 
     const c = [0.9, 0.9, 0.9];
+    const worldMatrix = utils.MakeWorld(0, 0, 0, 0, 30, 0, 1);
 
     function drawScene() {
         if (!imgtx.isLoaded) {
@@ -89,23 +90,19 @@ async function main() {
         gl.uniform1i(program.TEXTURE, 0);
 
         rubiksCube.cubies.forEach(cubie => {
-            const cubeWorldMatrix = [
-                utils.MakeWorld(0, 0, 0, 0, 30, 0, 1),
+            const cubieWorldMatrix = [
+                rubiksCube.cubeWorldMatrix,
                 rubiksCube.angle.toMatrix4(),
                 cubie.matrix,
             ].reduce(utils.multiplyMatrices);
 
-            const viewWorldMatrix = [
-                viewMatrix,
-                cubeWorldMatrix,
-            ].reduce(utils.multiplyMatrices);
-
             const projectionMatrix = [
                 perspectiveMatrix,
-                viewWorldMatrix,
+                viewMatrix,
+                cubieWorldMatrix,
             ].reduce(utils.multiplyMatrices);
 
-            const normalTransformationMatrix = utils.invertMatrix(utils.transposeMatrix(viewWorldMatrix));
+            const normalTransformationMatrix = utils.invertMatrix(utils.transposeMatrix(cubieWorldMatrix));
     
             gl.uniformMatrix4fv(program.MATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(projectionMatrix));
             gl.uniformMatrix4fv(program.NORMALMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(normalTransformationMatrix));

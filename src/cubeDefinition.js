@@ -1,7 +1,7 @@
 import * as utils from "./utils.js";
 
 
-let accX = 0.2, accY = 0.2;
+let accX = 0.5, accY = 0.5;
 let velX = 0.0, velY = 0.0;
 
 class Cubie {
@@ -75,6 +75,13 @@ export class RubiksCube {
 			this.program = program;
 			this.size = 1.85;
 			this.cubies = await this.initCubies(gl, program);
+
+			this.cubeWorldMatrix = utils.MakeWorld(
+				0, 0, 0,
+				0, 30, 0,
+				1
+			);
+
 			this.angle = Quaternion.fromEuler(0, 0, 0);
 
 			this.rotatingFunc = null;
@@ -106,7 +113,7 @@ export class RubiksCube {
 			});
 	}
 
-	async solveCube() {
+	solveCube() {
 		if (this.cube.isSolved() || this.moveQueue.length > 0) return;
 
 		fetch('https://mc.forgia.dev:5000/solve/' + this.cube.asString())
@@ -151,18 +158,18 @@ export class RubiksCube {
 			"F": [0, 0, -1, 0],
 		}
 
-		let selFace = faces[move[0]];
+		const selFace = faces[move[0]];
 
 		if (selFace == undefined) return;
 
-		let faceKeys = Object.keys(faces);
-		let vectors = Object.values(faces);
+		const faceKeys = Object.keys(faces);
+		const vectors = Object.values(faces);
 
-		let rotatedV = vectors.map((v) => utils.multiplyMatrixVector(this.angle.toMatrix4(), v));
+		const rotatedV = vectors.map((v) => utils.multiplyMatrixVector(this.angle.toMatrix4(), v));
 
-		let best = utils.argMax(rotatedV.map((v) => utils.dot(v, selFace)));
+		const best = utils.argMax(rotatedV.map((v) => utils.dot(v, selFace)));
 
-		let toRotate = faceKeys[best];
+		const toRotate = faceKeys[best];
 
 		this.moveQueue.push([toRotate, amount]);
 	}
@@ -194,7 +201,7 @@ export class RubiksCube {
 		console.log(this.cube.asString())
 	}
 
-	async turn(rX, rY, rZ, index, amount) {
+	turn(rX, rY, rZ, index, amount) {
 		const speed = 500;
 		const backwards = amount < 0;
 
@@ -208,13 +215,11 @@ export class RubiksCube {
 
 		const func = (x) => (backwards ? -1 : 1) * paramBlendFunc(blendParam, x / amount) * amount;
 
-		this.rotatingFunc = async (deltaC) =>  {
+		this.rotatingFunc = (deltaC) => {
 			deltaC *= speed;
 			deltaC = Math.min(deltaC, amount - prevX);
 
-			const y = func(prevX, amount);
-			
-			console.log(blendParam);
+			const y = func(prevX);
 
 			//TODO make the filter a more clear predicate
 			this.cubies.filter((cubie) =>
@@ -243,7 +248,7 @@ export class RubiksCube {
 		}
 	}
 
-	async update(deltaC) {
+	update(deltaC) {
 		if (this.rotatingFunc != null) {
 			this.rotatingFunc(deltaC);
 		} else if (this.moveQueue.length > 0) {
@@ -253,12 +258,9 @@ export class RubiksCube {
 			this.applyMove(toRotate, amount);
 		}
 
-		// console.log(deltaC)
-
 		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC * 30;
 		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY)) * deltaC * 30;
 
-		//Limit the x-axis rotation range
 		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
 	}
 }

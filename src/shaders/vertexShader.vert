@@ -12,7 +12,7 @@ out vec3 fs_norm;
 out vec2 fs_uv;
 
 void main() {
-  fs_pos = mat3(matrix) * a_position; 
+  fs_pos = mat3(matrix) * a_position;
   fs_norm = mat3(nMatrix) * a_normal; 
   fs_uv = a_uv;
 
