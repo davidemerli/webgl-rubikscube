@@ -1,7 +1,6 @@
 import * as utils from "./utils.js";
 import * as cubedef from "./cubeDefinition.js";
-
-let zoom = 10;
+import * as controls from "./controls.js";
 
 async function main() {
     // Get a WebGL context
@@ -14,8 +13,7 @@ async function main() {
     }
 
     utils.resizeCanvasToDisplaySize(canvas);
-    cubedef.initMouseControl(canvas);
-
+    
     const shaders = await utils.loadShaders(); // [vs, fs]
 
     // create GLSL shaders, upload the GLSL source, compile the shaders and link them
@@ -27,6 +25,8 @@ async function main() {
     setupUniforms(program, gl);
 
     const rubiksCube = await new cubedef.RubiksCube(gl, program);
+    controls.initMouseControl(canvas, rubiksCube);
+    controls.bindButtons(rubiksCube);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
@@ -49,8 +49,7 @@ async function main() {
     const lightColor = [1.5, 1.5, 1.5];
     const cubeMaterialColor = [0.5, 0.5, 0.5];
 
-    const c = [0.9, 0.9, 0.9];
-    const worldMatrix = utils.MakeWorld(0, 0, 0, 0, 30, 0, 1);
+    const backgroundColor = [0.9, 0.9, 0.9];
 
     function drawScene() {
         if (!imgtx.isLoaded) {
@@ -68,27 +67,34 @@ async function main() {
             Math.cos(dirLightAlpha) * Math.sin(dirLightBeta)
         ];
 
+        // animate scene
         animate();
 
+        // clear the canvas
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-        gl.clearColor(c[0], c[1], c[2], 1);
+        gl.clearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1);
         gl.enable(gl.DEPTH_TEST)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         //use this aspect ratio to keep proportions
         const aspect_ratio = gl.canvas.width * 1.0 / gl.canvas.height;
-        const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
-        const viewMatrix = utils.MakeView(0, 0, zoom, 0, 0);
 
+        // set the perspective matrix
+        const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
+        // set the view matrix
+        const viewMatrix = utils.MakeView(0, 0, controls.zoom, 0, 0);
+
+        // set light uniforms
         gl.uniform3fv(program.LIGHT_DIRECTION, lightDirection);
         gl.uniform3fv(program.LIGHT_COLOR, lightColor);
         gl.uniform3fv(program.MATERIAL_DIFF_COLOR, cubeMaterialColor);
 
+        // apply texture
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, imgtx.webglTexture);
         gl.uniform1i(program.TEXTURE, 0);
 
+        // draw each cubie
         rubiksCube.cubies.forEach(cubie => {
             const cubieWorldMatrix = [
                 rubiksCube.cubeWorldMatrix,
@@ -116,7 +122,6 @@ async function main() {
     }
 
     window.requestAnimationFrame(drawScene);
-    bindButtons(rubiksCube);
 }
 
 function setupAttributes(program, context) {
@@ -133,96 +138,6 @@ function setupUniforms(program, context) {
     program.LIGHT_DIRECTION = context.getUniformLocation(program, "lightDirection");
     program.LIGHT_COLOR = context.getUniformLocation(program, "lightColor");
     program.MATERIAL_DIFF_COLOR = context.getUniformLocation(program, 'mDiffColor');
-}
-
-function bindButtons(rubiksCube) {
-    const rotations = ["F", "L", "B", "R", "U", "D"];
-    let keysPressed = {};
-
-    // scroll with mouse wheel
-    document.onwheel = function (e) {
-        zoom += e.deltaY > 0 ? 0.2 : -0.2;
-    };
-
-    rotations.forEach(id => {
-
-        //Logic of digital buttons
-        document.getElementById(id).addEventListener("click", function () {
-            rubiksCube.applyMoveFromCamera(id, 1);
-        });
-
-        document.getElementById(id.concat("'")).addEventListener("click", function () {
-            rubiksCube.applyMoveFromCamera(id, -1);
-        });
-
-        //Logic of physical buttons
-        document.addEventListener('keydown', (e) => {
-            keysPressed[e.key.toUpperCase()] = true;
-            
-            if (keysPressed[id]) {
-                if (keysPressed['SHIFT']) {
-                    rubiksCube.applyMoveFromCamera(id, -1);
-                } else {
-                    rubiksCube.applyMoveFromCamera(id, 1);
-                };
-            };
-        });
-
-        document.addEventListener('keyup', (e) => {
-            delete keysPressed[e.key.toUpperCase()];
-        });
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key.toUpperCase() == 'S') {
-            rubiksCube.solveCube();
-        }
-        if (e.key.toUpperCase() == 'Z') {
-            rubiksCube.scramble();
-        }
-
-        if (e.key.toUpperCase() == 'E') {
-            rubiksCube.size = rubiksCube.size == 5 ? 1.9 : 5;
-
-            rubiksCube.cubies.forEach((cubie) =>
-                cubie.matrix = utils.MakeTranslateMatrix(
-                    cubie.x * (rubiksCube.size),
-                    cubie.y * (rubiksCube.size),
-                    cubie.z * (rubiksCube.size),
-                ));
-        }
-    })
-
-    //bind button to solve cube
-    document.getElementById("solve").addEventListener("click", () => {
-        rubiksCube.solveCube();
-    });
-
-    //bind button to scramble cube
-    document.getElementById("scramble").addEventListener("click", () => {
-        rubiksCube.scramble();
-    });
-
-    const slider = document.getElementById("expandRange");
-
-    slider.oninput = function () {
-        if (rubiksCube.moveQueue.length != 0 || rubiksCube.rotatingFunc != null) return;
-
-        const diff = this.value - rubiksCube.size;
-
-        rubiksCube.cubies.forEach((cubie) =>
-            cubie.matrix = utils.multiplyMatrices(
-                utils.MakeTranslateMatrix(
-                    cubie.x * (diff),
-                    cubie.y * (diff),
-                    cubie.z * (diff),
-                ),
-                cubie.matrix,
-            )
-        );
-
-        rubiksCube.size = this.value;
-    }
 }
 
 window.onload = main;

@@ -1,13 +1,8 @@
 import * as utils from "./utils.js";
 
-
-let accX = 0.5, accY = 0.5;
-let velX = 0.0, velY = 0.0;
-
 class Cubie {
 	constructor(gl, program, x, y, z, size) {
 		return (async () => {
-
 			this.x = x;
 			this.y = y;
 			this.z = z;
@@ -18,8 +13,7 @@ class Cubie {
 				this.z * (size),
 			);
 
-			this.mesh = await this.initMesh(gl);
-
+			this.mesh = await this.initMesh();
 			this.vao = this.initVAO(gl, program, this.mesh);
 
 			return this;
@@ -55,7 +49,7 @@ class Cubie {
 		return vao;
 	}
 
-	async initMesh(gl) {
+	async initMesh() {
 		let objStr;
 
 		try {
@@ -64,7 +58,7 @@ class Cubie {
 			objStr = await utils.get_objstr("assets/cube.obj");
 		}
 
-		return new OBJ.Mesh(objStr);;
+		return new OBJ.Mesh(objStr);
 	}
 }
 
@@ -75,6 +69,9 @@ export class RubiksCube {
 			this.program = program;
 			this.size = 1.85;
 			this.cubies = await this.initCubies(gl, program);
+
+			this.accX = 0.5, this.accY = 0.5;
+			this.velX = 0.0, this.velY = 0.0;
 
 			this.cubeWorldMatrix = utils.MakeWorld(
 				0, 0, 0,
@@ -94,23 +91,23 @@ export class RubiksCube {
 		})();
 	}
 
+	applyAlgorithm(algorithm) {
+		let moves = algorithm.split(' ');
+
+		for (let i = 0; i < moves.length; i++) {
+			let amount, move;
+			[move, amount] = convertToMoveAmount(moves[i]);
+
+			this.moveQueue.push([move[0], amount]);
+		}
+	}
+
 	scramble() {
 		if (this.moveQueue.length > 0) return;
 
 		fetch('https://mc.forgia.dev:5000/scramble')
 			.then(response => response.text())
-			.then(async result => {
-				let moves = result.split(' ');
-
-				for (let i = 0; i < moves.length; i++) {
-					const move = moves[i];
-					const c = move[move.length - 1];
-
-					let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
-
-					this.moveQueue.push([move[0], amount]);
-				}
-			});
+			.then(async result => this.applyAlgorithm(result));
 	}
 
 	solveCube() {
@@ -118,18 +115,7 @@ export class RubiksCube {
 
 		fetch('https://mc.forgia.dev:5000/solve/' + this.cube.asString())
 			.then(response => response.text())
-			.then(async result => {
-				let moves = result.split(' ');
-
-				for (let i = 0; i < moves.length; i++) {
-					const move = moves[i];
-					const c = move[move.length - 1];
-
-					let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
-
-					this.moveQueue.push([move[0], amount]);
-				}
-			});
+			.then(async result => this.applyAlgorithm(result));
 	}
 
 	async initCubies(gl, program) {
@@ -140,7 +126,8 @@ export class RubiksCube {
 			for (let y = -1; y <= 1; y++) {
 				for (let z = -1; z <= 1; z++) {
 					cubies.push(await new Cubie(gl, program, x, y, z, this.size));
-					console.log(x, y, z)
+
+					console.log('loaded', x, y, z)
 				}
 			}
 		}
@@ -148,6 +135,12 @@ export class RubiksCube {
 		return cubies;
 	}
 
+	/**
+	 * gets the best face to rotate checking which of the face normals is closer to the base
+	 * move, applied without any cube rotation
+	 * 
+	 * the output is a string representing the move to be applied, so it can be passed to applymove
+	 */
 	applyMoveFromCamera(move, amount) {
 		const faces = {
 			"U": [0, -1, 0, 0],
@@ -174,6 +167,9 @@ export class RubiksCube {
 		this.moveQueue.push([toRotate, amount]);
 	}
 
+	/**
+	* converts a string move into an actual movement for the cube
+	*/
 	applyMove(toRotate, amount) {
 		switch (toRotate) {
 			case "U":
@@ -196,36 +192,47 @@ export class RubiksCube {
 				break;
 		}
 
-		this.cube.move(toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : ""));
+		this.cube.move(convertMoveToSymbolic(toRotate, amount));
 
 		console.log(this.cube.asString())
 	}
 
+	/** 
+	* rX, rY, rZ are mutually exclusive, so we can use a single function
+	* they indicate which axis represents the face we are rotating
+	*
+	* index disambiguates which face we are rotating w.r.t. the chosen axis
+	*/
 	turn(rX, rY, rZ, index, amount) {
-		const speed = 500;
 		const backwards = amount < 0;
 
+		// avoid useless rotations
 		amount = Math.abs(amount % 360);
 
+		if (amount == 0) return;
+
+		// default starting point for the function//
 		let prevX = 0.0;
 		let prevY = 0.0;
 
+		// obtain the function we're going to use to rotate the face
 		const paramBlendFunc = utils.paramBlend;
 		const blendParam = utils.randBetween(2.0, 2.4);
 
+		const speed = 500; // speed of the rotation
+
+		// This function, given a value from 0 to amount, gives out the actual angle for the current time frame
+		// using this we can have a more fluid motion using common math function used in animations
 		const func = (x) => (backwards ? -1 : 1) * paramBlendFunc(blendParam, x / amount) * amount;
 
+		// set the rotating function that will be called in the update function every tick
 		this.rotatingFunc = (deltaC) => {
 			deltaC *= speed;
 			deltaC = Math.min(deltaC, amount - prevX);
 
 			const y = func(prevX);
 
-			//TODO make the filter a more clear predicate
-			this.cubies.filter((cubie) =>
-				(rX && Math.round(cubie.x) == index) ||
-				(rY && Math.round(cubie.y) == index) ||
-				(rZ && Math.round(cubie.z) == index))
+			this.cubies.filter((cubie) => isCubieToRotate(cubie, rX, rY, rZ, index))
 				.forEach((cubie) => {
 					cubie.matrix = [
 						utils.MakeRotateXYZMatrix(rX, rY, rZ, index * (y - prevY)),
@@ -233,111 +240,66 @@ export class RubiksCube {
 					].reduce(utils.multiplyMatrices)
 				});
 
+			// update the previous values
 			prevX += deltaC;
 			prevY = y;
 
 			if (amount == Math.abs(y)) {
+				// restore cubies coordinates from cubie rotated matrix, being careful that 'size' parameter
+				// offsets the -1, 0, 1 coordinates
 				this.cubies.forEach((cubie) => {
-					cubie.x = cubie.matrix[3] / this.size;
-					cubie.y = cubie.matrix[7] / this.size;
-					cubie.z = cubie.matrix[11] / this.size;
+					cubie.x = Math.round(cubie.matrix[3] / this.size);
+					cubie.y = Math.round(cubie.matrix[7] / this.size);
+					cubie.z = Math.round(cubie.matrix[11] / this.size);
 				});
 
+				// set the rotating function to null to avoid calling it again
 				this.rotatingFunc = null;
 			}
 		}
 	}
 
 	update(deltaC) {
+		// call the rotating function if it's not null
 		if (this.rotatingFunc != null) {
 			this.rotatingFunc(deltaC);
 		} else if (this.moveQueue.length > 0) {
+			// if there are moves in the queue, apply the first one
 			let toRotate, amount;
 			[toRotate, amount] = this.moveQueue.shift();
 
 			this.applyMove(toRotate, amount);
 		}
 
-		velX -= Math.sign(velX) * Math.min(accX, Math.abs(velX)) * deltaC * 30;
-		velY -= Math.sign(velY) * Math.min(accY, Math.abs(velY)) * deltaC * 30;
+		// decrement velX and velY w.r.t. the acceleration and the sign of each vector component
+		this.velX -= Math.sign(this.velX) * Math.min(this.accX, Math.abs(this.velX)) * deltaC * 30;
+		this.velY -= Math.sign(this.velY) * Math.min(this.accY, Math.abs(this.velY)) * deltaC * 30;
 
-		this.angle = Quaternion.fromEuler(0, utils.degToRad(velY), utils.degToRad(velX)).mul(this.angle);
+		// obtain the new rotation angle
+		this.angle = Quaternion.fromEuler(
+			0,
+			utils.degToRad(this.velY),
+			utils.degToRad(this.velX)
+		).mul(this.angle);
 	}
 }
 
+// example: F2 = F, 180; R' = R, -90
+function convertToMoveAmount(moveString) {
+	const c = moveString[moveString.length - 1];
 
-//Add mouse interaction on canvas
-export function initMouseControl(canvas) {
-	var lastX = -1, lastY = -1;
-	var dragging = false;
+	let amount = c == "'" ? -1 : c == "2" ? 2 : 1;
 
-	canvas.onmousedown = function (event) {//Press the mouse to trigger the listening event
-		var x = event.clientX, y = event.clientY;
+	return [moveString[0], amount];
+}
 
-		if (event.button == 0) {//Left mouse buttons
-			var rect1 = event.target.getBoundingClientRect();
+// example: F, 180 = F2; R, -90 = R'
+function convertMoveToSymbolic(toRotate, amount) {
+	return toRotate + (amount == -1 ? "'" : Math.abs(amount) == 2 ? "2" : "")
+}
 
-			if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
-				lastX = x;
-				lastY = y;
-				dragging = true;
-			}
-		}
-	}
-	//Release the mouse
-	canvas.onmouseup = function (event) {
-		if (event.button == 0) {
-			dragging = false;
-		}
-	};
-
-	//Move the mouse
-	canvas.onmousemove = function (event) {//Mouse movement monitoring
-		var x = event.clientX, y = event.clientY;
-
-		//Rotate
-		if (dragging) {
-			var factor1 = 200 / canvas.height;//spinning speed
-			velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
-			velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
-		}
-
-		//Update the previous position as the starting position
-		lastX = x;
-		lastY = y;
-	}
-
-	canvas.addEventListener("touchstart", handleStart, false);
-
-	function handleStart(event) {
-		var touch = event.changedTouches[0]
-		var x = touch.clientX, y = touch.clientY;
-
-		var rect1 = event.target.getBoundingClientRect();
-
-		if (rect1.left <= x && x < rect1.right && rect1.top <= y && y < rect1.bottom) {
-			lastX = x;
-			lastY = y;
-			dragging = true;
-		}
-	}
-
-	canvas.addEventListener("touchend", () => dragging = false, false);
-	canvas.addEventListener("touchmove", handleMove, false);
-
-	function handleMove(event) {
-		var touch = event.changedTouches[0]
-		var x = touch.clientX, y = touch.clientY;
-
-		//Rotate
-		if (dragging) {
-			var factor1 = 200 / canvas.height;//spinning speed
-			velX = Math.sign((x - lastX)) * Math.min(10, Math.abs(factor1 * (x - lastX)));
-			velY = Math.sign((y - lastY)) * Math.min(10, Math.abs(factor1 * (y - lastY)));
-		}
-
-		//Update the previous position as the starting position
-		lastX = x;
-		lastY = y;
-	}
+function isCubieToRotate(cubie, rX, rY, rZ, index) {
+	return (rX && cubie.x == index) ||
+		(rY && cubie.y == index) ||
+		(rZ && cubie.z == index);
 }

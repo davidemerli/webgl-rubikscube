@@ -4,8 +4,9 @@ in vec3 a_position;
 in vec3 a_normal;
 in vec2 a_uv;
 
-uniform mat4 matrix; 
-uniform mat4 nMatrix;     //matrix to transform normals
+uniform mat4 matrix;      
+//matrix to transform normals
+uniform mat4 nMatrix;     
 
 out vec3 fs_pos;
 out vec3 fs_norm;
