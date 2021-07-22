@@ -98,7 +98,7 @@ async function main() {
         // set directional light uniforms
         gl.uniform3fv(program.DIR_LIGHT_DIRECTION, dirLightDirection);
         gl.uniform3fv(program.DIR_LIGHT_COLOR, dirLightColor);
-        gl.uniform3fv(program.DIR_LIGHT_GAMMA, dirLightGamma);
+        gl.uniform1f(program.DIR_LIGHT_GAMMA, dirLightGamma);
 
         // set point light uniforms
         gl.uniform3fv(program.POINT_LIGHT_POS, pointLightPos);

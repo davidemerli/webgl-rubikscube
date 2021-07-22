@@ -10,7 +10,7 @@ uniform vec3 mDiffColor; //material diffuse color
 
 uniform vec3 dirLightDirection; // directional light direction vec
 uniform vec3 dirLightColor; // directional light color 
-uniform vec3 dirLightGamma; // reflection coefficient
+uniform float dirLightGamma; // reflection coefficient
 
 uniform vec3 pointLightPos; // point light position
 uniform vec3 pointLightColor; // point light color 
@@ -46,7 +46,7 @@ void main() {
   vec3 diffuseA = lambertDiffuse(dirLightDirection, normal, dirLightColor, mDiffColor);
 
   // compute blinn specular
-  vec3 specular = blinnSpecular(eyeDir, normal, dirLightDirection, 128.0, mDiffColor);
+  vec3 specular = blinnSpecular(eyeDir, normal, dirLightDirection, dirLightGamma, mDiffColor);
 
   // compute point light
   vec3 pointLightColor = pointLightColorWithDecay(pointLightPos, pointLightColor, fs_pos, 1.0, 0.0);
