@@ -13,14 +13,14 @@ async function main() {
     }
 
     utils.resizeCanvasToDisplaySize(canvas);
-    
+
     const shaders = await utils.loadShaders(); // [vs, fs]
 
     // create GLSL shaders, upload the GLSL source, compile the shaders and link them
     const vertexShader = utils.createShader(gl, gl.VERTEX_SHADER, shaders[0]);
     const fragmentShader = utils.createShader(gl, gl.FRAGMENT_SHADER, shaders[1]);
     const program = utils.createProgram(gl, vertexShader, fragmentShader);
-    
+
     setupAttributes(program, gl);
     setupUniforms(program, gl);
 
@@ -49,12 +49,24 @@ async function main() {
     const slider3 = document.getElementById("slider3");
     const slider4 = document.getElementById("slider4");
 
-    const pointLightColor = [1.0, 1.0, 1.0];
+    const slider6 = document.getElementById("slider6");
 
-    const dirLightColor = [1.5, 1.5, 1.5];
+    const checkbox1 = document.getElementById("checkbox1");
+    const checkbox2 = document.getElementById("checkbox2");
+
+    let dirLightColor = [1.0, 1.0, 1.0];
+    let pointLightColor = [0.0, 0.0, 0.0];
+
+    checkbox1.addEventListener("change", function () {
+        dirLightColor = this.checked ? [1.0, 1.0, 1.0] : [0.0, 0.0, 0.0];
+    });
+
+    checkbox2.addEventListener("change", function () {
+        pointLightColor = this.checked ? [1.0, 1.0, 1.0] : [0.0, 0.0, 0.0];
+    });
+
     const cubeMaterialColor = [0.5, 0.5, 0.5];
-
-    const backgroundColor = [0.9, 0.9, 0.9];
+    const backgroundColor = [0.8, 0.8, 0.8];
 
     function drawScene() {
         if (!imgtx.isLoaded) {
@@ -62,10 +74,12 @@ async function main() {
             return;
         }
 
+        let ambientIntensity = slider6.value;
+
         //define directional light
         let dirLightAlpha = -utils.degToRad(slider1.value);
         let dirLightBeta = -utils.degToRad(slider2.value);
-        let dirLightGamma = utils.degToRad(slider5.value);
+        let reflectLightGamma = utils.degToRad(slider5.value);
 
         let dirLightDirection = [
             Math.cos(dirLightAlpha) * Math.cos(dirLightBeta),
@@ -91,19 +105,23 @@ async function main() {
         // set the perspective matrix
         const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
         // set the view matrix
-        const viewMatrix = utils.MakeView(0, -2, controls.zoom, 0, 0);
+        const viewMatrix = utils.MakeView(0, -3, controls.zoom, 0, 0);
 
         gl.uniform3fv(program.EYE_POSITION, eyePosition);
+
+        // set ambient uniforms
+        gl.uniform1f(program.AMBIENT_INTENSITY, ambientIntensity);
 
         // set directional light uniforms
         gl.uniform3fv(program.DIR_LIGHT_DIRECTION, dirLightDirection);
         gl.uniform3fv(program.DIR_LIGHT_COLOR, dirLightColor);
-        gl.uniform1f(program.DIR_LIGHT_GAMMA, dirLightGamma);
+        gl.uniform1f(program.REFLECT_LIGHT_GAMMA, reflectLightGamma);
 
         // set point light uniforms
         gl.uniform3fv(program.POINT_LIGHT_POS, pointLightPos);
         gl.uniform3fv(program.POINT_LIGHT_COLOR, pointLightColor);
 
+        // set cube material uniforms
         gl.uniform3fv(program.MATERIAL_DIFF_COLOR, cubeMaterialColor);
 
         // apply texture
@@ -126,7 +144,7 @@ async function main() {
             ].reduce(utils.multiplyMatrices);
 
             const normalTransformationMatrix = utils.invertMatrix(utils.transposeMatrix(cubieWorldMatrix));
-    
+
             gl.uniformMatrix4fv(program.MATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(projectionMatrix));
             gl.uniformMatrix4fv(program.NORMALMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(normalTransformationMatrix));
             gl.uniformMatrix4fv(program.WORLDMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(cubieWorldMatrix));
@@ -152,13 +170,15 @@ function setupUniforms(program, context) {
     program.MATRIX_ATTRIBUTE = context.getUniformLocation(program, "matrix");
     program.WORLDMATRIX_ATTRIBUTE = context.getUniformLocation(program, "pMatrix");
     program.NORMALMATRIX_ATTRIBUTE = context.getUniformLocation(program, "nMatrix");
-    program.TEXTURE = context.getUniformLocation(program, "u_texture"); 
+    program.TEXTURE = context.getUniformLocation(program, "u_texture");
 
     program.EYE_POSITION = context.getUniformLocation(program, "eyePosition");
 
+    program.AMBIENT_INTENSITY = context.getUniformLocation(program, "ambientIntensity");
+
     program.DIR_LIGHT_DIRECTION = context.getUniformLocation(program, "dirLightDirection");
     program.DIR_LIGHT_COLOR = context.getUniformLocation(program, "dirLightColor");
-    program.DIR_LIGHT_GAMMA = context.getUniformLocation(program, "dirLightGamma");
+    program.REFLECT_LIGHT_GAMMA = context.getUniformLocation(program, "reflectLightGamma");
 
     program.POINT_LIGHT_POS = context.getUniformLocation(program, "pointLightPos");
     program.POINT_LIGHT_COLOR = context.getUniformLocation(program, "pointLightColor");

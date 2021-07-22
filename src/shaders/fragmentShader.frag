@@ -10,18 +10,17 @@ uniform vec3 mDiffColor; //material diffuse color
 
 uniform vec3 dirLightDirection; // directional light direction vec
 uniform vec3 dirLightColor; // directional light color 
-uniform float dirLightGamma; // reflection coefficient
+uniform float reflectLightGamma; // reflection coefficient
+uniform float ambientIntensity;
 
 uniform vec3 pointLightPos; // point light position
 uniform vec3 pointLightColor; // point light color 
-
 
 uniform vec3 eyePosition; // observer position
 
 uniform sampler2D u_texture;
 
 out vec4 outColor;
-
 
 vec3 pointLightColorWithDecay(vec3 pointLightPos, vec3 pointLightColor, vec3 fs_pos, float target, float decay) {
   return pointLightColor * pow(target / length(pointLightPos - fs_pos), decay);
@@ -37,19 +36,30 @@ vec3 phongSpecular(vec3 normal, vec3 eyeDir, vec3 lightDirection, vec3 lightColo
 
   return lightColor * specular;
 }
+
 void main() {
   vec3 dirLightDirection = normalize(dirLightDirection);
+  vec3 pointLightDirection = normalize(pointLightPos - fs_pos);
+  
   vec3 eyeDir = normalize(eyePosition - fs_pos);
   vec3 normal = normalize(fs_norm);
+
+  // compute ambient
+  float ambient = ambientIntensity;
 
   // compute lambert diffuse
   vec3 diffuseA = lambertDiffuse(normal, dirLightDirection, dirLightColor);
 
   // compute specular
-  vec3 specularA = phongSpecular(normal, eyeDir, dirLightDirection, dirLightColor, dirLightGamma);
+  vec3 specularA = phongSpecular(normal, eyeDir, dirLightDirection, dirLightColor, reflectLightGamma);
+
+  // computer spotlight
+  vec3 pointLightColor = pointLightColorWithDecay(pointLightPos, pointLightColor, fs_pos, 1.0, 0.1);
+  vec3 diffuseB = pointLightColor * lambertDiffuse(normal, pointLightDirection, pointLightColor);
+  vec3 specularB = pointLightColor * phongSpecular(normal, eyeDir, pointLightDirection, pointLightColor, reflectLightGamma);
 
   // combine
-  vec3 color = mDiffColor * (diffuseA + specularA);
+  vec3 color = mDiffColor * (diffuseA + specularA + diffuseB + specularB + ambient);
 
   outColor = vec4(clamp(color, 0.0, 1.0), 1.0) * texture(u_texture, fs_uv);
 }
