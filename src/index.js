@@ -46,7 +46,12 @@ async function main() {
     const slider1 = document.getElementById("slider1");
     const slider2 = document.getElementById("slider2");
 
-    const lightColor = [1.5, 1.5, 1.5];
+    const slider3 = document.getElementById("slider3");
+    const slider4 = document.getElementById("slider4");
+
+    const pointLightColor = [1.0, 1.0, 1.0];
+
+    const dirLightColor = [1.5, 1.5, 1.5];
     const cubeMaterialColor = [0.5, 0.5, 0.5];
 
     const backgroundColor = [0.9, 0.9, 0.9];
@@ -60,12 +65,16 @@ async function main() {
         //define directional light
         let dirLightAlpha = -utils.degToRad(slider1.value);
         let dirLightBeta = -utils.degToRad(slider2.value);
+        let dirLightGamma = utils.degToRad(slider5.value);
 
-        let lightDirection = [
+        let dirLightDirection = [
             Math.cos(dirLightAlpha) * Math.cos(dirLightBeta),
             Math.sin(dirLightAlpha),
             Math.cos(dirLightAlpha) * Math.sin(dirLightBeta)
         ];
+
+        let pointLightPos = [0.0, slider3.value, slider4.value];
+        let eyePosition = [0.0, 0.0, controls.zoom];
 
         // animate scene
         animate();
@@ -84,11 +93,17 @@ async function main() {
         // set the view matrix
         const viewMatrix = utils.MakeView(0, 0, controls.zoom, 0, 0);
 
-        gl.uniform3fv(program.EYE_POSITION, [0.0, 0.0, 0.0]);
+        gl.uniform3fv(program.EYE_POSITION, eyePosition);
 
-        // set light uniforms
-        gl.uniform3fv(program.LIGHT_DIRECTION, lightDirection);
-        gl.uniform3fv(program.LIGHT_COLOR, lightColor);
+        // set directional light uniforms
+        gl.uniform3fv(program.DIR_LIGHT_DIRECTION, dirLightDirection);
+        gl.uniform3fv(program.DIR_LIGHT_COLOR, dirLightColor);
+        gl.uniform3fv(program.DIR_LIGHT_GAMMA, dirLightGamma);
+
+        // set point light uniforms
+        gl.uniform3fv(program.POINT_LIGHT_POS, pointLightPos);
+        gl.uniform3fv(program.POINT_LIGHT_COLOR, pointLightColor);
+
         gl.uniform3fv(program.MATERIAL_DIFF_COLOR, cubeMaterialColor);
 
         // apply texture
@@ -140,8 +155,14 @@ function setupUniforms(program, context) {
     program.TEXTURE = context.getUniformLocation(program, "u_texture"); 
 
     program.EYE_POSITION = context.getUniformLocation(program, "eyePosition");
-    program.LIGHT_DIRECTION = context.getUniformLocation(program, "lightDirection");
-    program.LIGHT_COLOR = context.getUniformLocation(program, "lightColor");
+
+    program.DIR_LIGHT_DIRECTION = context.getUniformLocation(program, "dirLightDirection");
+    program.DIR_LIGHT_COLOR = context.getUniformLocation(program, "dirLightColor");
+    program.DIR_LIGHT_GAMMA = context.getUniformLocation(program, "dirLightGamma");
+
+    program.POINT_LIGHT_POS = context.getUniformLocation(program, "pointLightPos");
+    program.POINT_LIGHT_COLOR = context.getUniformLocation(program, "pointLightColor");
+
     program.MATERIAL_DIFF_COLOR = context.getUniformLocation(program, 'mDiffColor');
 }
 
