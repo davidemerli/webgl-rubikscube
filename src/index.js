@@ -84,6 +84,8 @@ async function main() {
         // set the view matrix
         const viewMatrix = utils.MakeView(0, 0, controls.zoom, 0, 0);
 
+        gl.uniform3fv(program.EYE_POSITION, [0.0, 0.0, 0.0]);
+
         // set light uniforms
         gl.uniform3fv(program.LIGHT_DIRECTION, lightDirection);
         gl.uniform3fv(program.LIGHT_COLOR, lightColor);
@@ -112,6 +114,7 @@ async function main() {
     
             gl.uniformMatrix4fv(program.MATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(projectionMatrix));
             gl.uniformMatrix4fv(program.NORMALMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(normalTransformationMatrix));
+            gl.uniformMatrix4fv(program.WORLDMATRIX_ATTRIBUTE, gl.FALSE, utils.transposeMatrix(cubieWorldMatrix));
 
             gl.bindVertexArray(cubie.vao);
 
@@ -132,9 +135,11 @@ function setupAttributes(program, context) {
 
 function setupUniforms(program, context) {
     program.MATRIX_ATTRIBUTE = context.getUniformLocation(program, "matrix");
+    program.WORLDMATRIX_ATTRIBUTE = context.getUniformLocation(program, "pMatrix");
     program.NORMALMATRIX_ATTRIBUTE = context.getUniformLocation(program, "nMatrix");
     program.TEXTURE = context.getUniformLocation(program, "u_texture"); 
 
+    program.EYE_POSITION = context.getUniformLocation(program, "eyePosition");
     program.LIGHT_DIRECTION = context.getUniformLocation(program, "lightDirection");
     program.LIGHT_COLOR = context.getUniformLocation(program, "lightColor");
     program.MATERIAL_DIFF_COLOR = context.getUniformLocation(program, 'mDiffColor');
