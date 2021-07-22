@@ -58,6 +58,8 @@ class Cubie {
 			objStr = await utils.get_objstr("assets/cube.obj");
 		}
 
+		// objStr = await utils.get_objstr("assets/test.obj");
+
 		return new OBJ.Mesh(objStr);
 	}
 }

@@ -91,7 +91,7 @@ async function main() {
         // set the perspective matrix
         const perspectiveMatrix = utils.MakePerspective(100, aspect_ratio, 0.1, 100.0);
         // set the view matrix
-        const viewMatrix = utils.MakeView(0, 0, controls.zoom, 0, 0);
+        const viewMatrix = utils.MakeView(0, -2, controls.zoom, 0, 0);
 
         gl.uniform3fv(program.EYE_POSITION, eyePosition);
 
