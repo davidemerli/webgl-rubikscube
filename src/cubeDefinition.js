@@ -107,7 +107,7 @@ export class RubiksCube {
 	scramble() {
 		if (this.moveQueue.length > 0) return;
 
-		fetch('https://mc.forgia.dev:5000/scramble')
+		fetch('https://code.devddk.it/scramble')
 			.then(response => response.text())
 			.then(async result => this.applyAlgorithm(result));
 	}
@@ -115,7 +115,7 @@ export class RubiksCube {
 	solveCube() {
 		if (this.cube.isSolved() || this.moveQueue.length > 0) return;
 
-		fetch('https://mc.forgia.dev:5000/solve/' + this.cube.asString())
+		fetch('https://code.devddk.it/solve/' + this.cube.asString())
 			.then(response => response.text())
 			.then(async result => this.applyAlgorithm(result));
 	}

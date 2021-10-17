@@ -1,108 +1,95 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
 
-<head>
-  <meta charset="utf8" />
-  <title>Rubik's Cube</title>
-  <link rel="stylesheet" href="src/css/style.css" />
-</head>
+    <title>Rubik's Cube</title>
+    <link rel="stylesheet" href="src/css/style.css" />
+  </head>
 
-<body>
-  <canvas id="c"></canvas>
-  <div class= "legend">
-    <div class="controls">
-      <div class="ui">
-        <img src="assets/icons/F.png" class="btn" id="F" type="button">
-        <img src="assets/icons/L.png" class="btn" id="L" type="button">
-        <img src="assets/icons/B.png" class="btn" id="B" type="button">
-        <img src="assets/icons/R.png" class="btn" id="R" type="button">
-        <img src="assets/icons/U.png" class="btn" id="U" type="button">
-        <img src="assets/icons/D.png" class="btn" id="D" type="button">
-      </div>
-      <div class="ui">
-        <img src="assets/icons/Finv.png" class="btn" id="F'" type="button">
-        <img src="assets/icons/Linv.png" class="btn" id="L'" type="button">
-        <img src="assets/icons/Binv.png" class="btn" id="B'" type="button">
-        <img src="assets/icons/Rinv.png" class="btn" id="R'" type="button">
-        <img src="assets/icons/Uinv.png" class="btn" id="U'" type="button">
-        <img src="assets/icons/Dinv.png" class="btn" id="D'" type="button">
-      </div>
-    </div>
+  <body>
+    <div class="overflow-y-auto absolute inset-0 w-screen inline-block align-bottom">
+      <canvas id="c" class="absolute"></canvas>
 
-    <div class="controls2">
+      <!-- controls -->
+      <div class="container mx-auto absolute left-1/2 transform -translate-x-1/2 bottom-4 flex grid grid-cols-1 xl:grid-cols-3 place-items-center p-4 select-none bg-gray-100 rounded-2xl drop-shadow-lg">
+        <!-- moves -->
+        <div class="order-1 xl:order-0 flex flex-auto max-w-2xl grid grid-cols-6 gap-0 filter drop-shadow-lg">
+          <img src="assets/icons/F.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="F" type="button" />
+          <img src="assets/icons/L.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="L" type="button" />
+          <img src="assets/icons/B.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="B" type="button" />
+          <img src="assets/icons/R.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="R" type="button" />
+          <img src="assets/icons/U.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="U" type="button" />
+          <img src="assets/icons/D.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="D" type="button" />
 
-      <div class="col1">
-        
-        <div class="slidername">
-          <img src="assets/icons/solve.png" class="btn" id="solve" type="button" class="btn" style="width: 110px;">
-          <img src="assets/icons/shuffle.png" class="btn" id="scramble" type="button" class="btn" style="width: 110px;">
+          <img src="assets/icons/Finv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="F'" type="button" />
+          <img src="assets/icons/Linv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="L'" type="button" />
+          <img src="assets/icons/Binv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="B'" type="button" />
+          <img src="assets/icons/Rinv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="R'" type="button" />
+          <img src="assets/icons/Uinv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="U'" type="button" />
+          <img src="assets/icons/Dinv.png" class="xl:scale-100 transition duration-200 ease-in-out transform hover:scale-110" id="D'" type="button" />
         </div>
 
-        <div class="sliderboard">
-          <div class="slidername">
-            <div class="slidername">
-              <label class="form-switch">
-                <input type="checkbox" id="checkbox1" checked>
-                <i></i>
-                directional light
-              </label>
-            </div>
-          </div>
-          <div class="slidername">
-            <label class="form-switch">
-              <input type="checkbox" id="checkbox2">
-              <i></i>
-              point light
-            </label>
+        <!-- api calls and switches -->
+        <div class="order-0 xl:order-1 flex flex-auto max-w-xl grid grid-cols-2 place-items-center p-2 gap-8">
+          <div class="flex grid grid-cols-1 place-items-start">
+            <img class="btn transition duration-200 ease-in-out transform hover:scale-110" src="assets/icons/shuffle.png" id="scramble" type="button" class="btn" />
+            <img class="btn transition duration-200 ease-in-out transform hover:scale-110" src="assets/icons/solve.png" id="solve" type="button" class="btn" />
           </div>
 
-        </div>
-      </div>
-      <div class="col2">
-          <div class="slidername">
-            <label for="height" class="margin">explode:</label>
-            <input type="range" min="1.85" max="5" value="1.85" step="0.05" class="slider" id="expandRange">
-          </div>
-          <div class="slidername">
-          <label for="height" class="margin">dir light alpha</label>
-            <input type="range" min="0" max="360" value="0" step="1" class="slider" id="slider1">
+          <div class="flex grid grid-cols-1 place-items-start">
+            <div>
+              <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="toggle1" id="checkbox1" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" />
+                <label for="toggle1" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+              </div>
+              <label for="toggle1" class="text-lg text-gray-700"> Directional Light </label>
             </div>
-          <div class="slidername">
-            <label for="height" class="margin">dir light beta</label>
-            <input type="range" min="0" max="360" value="270" step="1" class="slider" id="slider2">
+            <div>
+              <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="toggle2" id="checkbox2" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" />
+                <label for="toggle2" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+              </div>
+              <label for="toggle2" class="text-lg text-gray-700"> Point Light </label>
+            </div>
           </div>
-          <div class="slidername">
-            <label for="height" class="margin">reflect light gamma</label>
-            <input type="range" min="32.0" max="128.0" value="128.0" step="1" class="slider" id="slider5">
+        </div>
+
+        <!-- sliders -->
+        <div class="order-2 hidden xl:grid grid-cols-2 place-items-center p-2">
+          <div class="flex flex-col flex-auto gap-1.5 items-center">
+            <label class="text-lg text-gray-700">Explode Cube</label>
+            <label class="text-lg text-gray-700">Dir Light alpha</label>
+            <label class="text-lg text-gray-700">Dir Light beta</label>
+            <label class="text-lg text-gray-700">Reflect Light gamma</label>
+            <label class="text-lg text-gray-700">Point Light posY</label>
+            <label class="text-lg text-gray-700">Point Light posZ</label>
+            <label class="text-lg text-gray-700">Ambient Light</label>
           </div>
-          <div class="slidername">
-            <label for="height" class="margin">point light posY</label>
-            <input type="range" min="-10" max="10" value="3" step="0.1" class="slider" id="slider3">
-          </div>
-          <div class="slidername">
-            <label for="height" class="margin">point light posZ</label>
-            <input type="range" min="1" max="10" value="3" step="0.1" class="slider" id="slider4">
-          </div>
-          <div class="slidername">
-            <label for="height" class="margin">ambient</label>
-            <input type="range" min="0.0" max="1.0" value="0.3" step="0.05" class="slider" id="slider6">
+          <div class="flex flex-col flex-auto gap-6">
+            <input class="slider" type="range" min="1.85" max="5" value="1.85" step="0.05" id="expandRange" />
+            <input class="slider" type="range" min="0" max="360" value="0" step="1" id="slider1" />
+            <input class="slider" type="range" min="0" max="360" value="270" step="1" id="slider2" />
+            <input class="slider" type="range" min="32.0" max="128.0" value="128.0" step="1" id="slider5" />
+            <input class="slider" type="range" min="-10" max="10" value="3" step="0.1" id="slider3" />
+            <input class="slider" type="range" min="1" max="10" value="3" step="0.1" id="slider4" />
+            <input class="slider" type="range" min="0.0" max="1.0" value="0.3" step="0.05" id="slider6" />
           </div>
         </div>
       </div>
     </div>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet" />
+  </body>
 
-  </div>
-</body>
+  <script type="module" src="src/index.js"></script>
+  <script type="module" src="src/utils.js"></script>
+  <script type="module" src="src/cubeDefinition.js"></script>
+  <script type="module" src="src/controls.js"></script>
 
-<script type="module" src="src/index.js"></script>
-<script type="module" src="src/utils.js"></script>
-<script type="module" src="src/cubeDefinition.js"></script>
-<script type="module" src="src/controls.js"></script>
-
-<script src="lib/cubejs/cube.js"></script>
-<script src="lib/cubejs/solve.js"></script>
-<script src="lib/cubejs/lib/async.js"></script>
-<script src="lib/webgl-obj-loader.min.js"></script>
-<script src="lib/quaternion-min.js"></script>
-
+  <script src="lib/cubejs/cube.js"></script>
+  <script src="lib/cubejs/solve.js"></script>
+  <script src="lib/cubejs/lib/async.js"></script>
+  <script src="lib/webgl-obj-loader.min.js"></script>
+  <script src="lib/quaternion-min.js"></script>
 </html>
